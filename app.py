@@ -159,6 +159,56 @@ elif page == "🧠 Predict":
     # ----------------------------
     if "history" not in st.session_state:
         st.session_state.history = []
+elif page == "🧠 Predict":
+
+    st.title("🧠 Movie Review Sentiment Prediction")
+
+    st.markdown("### 💡 Quick Select Review (No Typing Needed)")
+
+    samples = {
+        "😊 Positive": "This movie was absolutely amazing and I loved every moment",
+        "😡 Negative": "Worst movie ever. Waste of time and boring plot",
+        "😐 Neutral": "The acting was great but the story was average"
+    }
+
+    # ----------------------------
+    # INIT SESSION STATE
+    # ----------------------------
+    if "review" not in st.session_state:
+        st.session_state.review = ""
+
+    # ----------------------------
+    # SAMPLE BUTTONS (FIXED)
+    # ----------------------------
+    col1, col2, col3 = st.columns(3)
+
+    if col1.button("😊 Positive"):
+        st.session_state.review = samples["😊 Positive"]
+
+    if col2.button("😡 Negative"):
+        st.session_state.review = samples["😡 Negative"]
+
+    if col3.button("😐 Neutral"):
+        st.session_state.review = samples["😐 Neutral"]
+
+    st.markdown("---")
+
+    # ----------------------------
+    # INPUT BOX (NOW CONTROLLED)
+    # ----------------------------
+    review = st.text_area(
+        "Enter or select a review:",
+        value=st.session_state.review,
+        height=120
+    )
+
+    st.session_state.review = review
+
+    # ----------------------------
+    # HISTORY INIT
+    # ----------------------------
+    if "history" not in st.session_state:
+        st.session_state.history = []
 
     # ----------------------------
     # PREDICT BUTTON
@@ -166,7 +216,7 @@ elif page == "🧠 Predict":
     if st.button("Analyze 🎯"):
 
         if review.strip() == "":
-            st.warning("Please enter a review")
+            st.warning("Please enter or select a review")
         else:
 
             cleaned = clean_text(review)
@@ -176,7 +226,6 @@ elif page == "🧠 Predict":
             proba = model.predict_proba(vector)[0]
             confidence = float(np.max(proba))
 
-            # result
             if prediction[0] == 1:
                 result = "Positive 😊"
                 st.success("POSITIVE REVIEW 😊")
@@ -187,9 +236,7 @@ elif page == "🧠 Predict":
             st.metric("Confidence", f"{confidence:.2f}")
             st.progress(confidence)
 
-            # ----------------------------
-            # STORE RESULT (HISTORY)
-            # ----------------------------
+            # STORE HISTORY
             st.session_state.history.append({
                 "review": review,
                 "result": result,
@@ -197,7 +244,7 @@ elif page == "🧠 Predict":
             })
 
     # ----------------------------
-    # HISTORY SECTION
+    # HISTORY
     # ----------------------------
     st.markdown("---")
     st.subheader("📌 Prediction History")
