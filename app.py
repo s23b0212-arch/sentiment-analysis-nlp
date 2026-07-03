@@ -123,15 +123,46 @@ if page == "🏠 Home":
     st.markdown("### 🔥 What you can do")
     st.info("Go to Predict page to test movie reviews")
 
-# ----------------------------
-# PREDICTION PAGE
-# ----------------------------
 elif page == "🧠 Predict":
 
     st.title("🧠 Movie Review Sentiment Prediction")
 
-    review = st.text_area("Enter your movie review:")
+    st.markdown("### 💡 Try Sample Reviews")
 
+    # ----------------------------
+    # SAMPLE BUTTONS (RECOMMENDATIONS)
+    # ----------------------------
+    col1, col2, col3 = st.columns(3)
+
+    samples = [
+        "This movie was absolutely amazing and I loved every moment",
+        "Worst movie ever. Waste of time and boring plot",
+        "The acting was great but the story was average"
+    ]
+
+    if col1.button("😊 Positive Sample"):
+        review = samples[0]
+
+    if col2.button("😡 Negative Sample"):
+        review = samples[1]
+
+    if col3.button("😐 Neutral Sample"):
+        review = samples[2]
+
+    # ----------------------------
+    # INPUT BOX
+    # ----------------------------
+    review = st.text_area("Enter your movie review:", value="")
+
+    # ----------------------------
+    # SESSION STORAGE (HISTORY)
+    # ----------------------------
+    if "history" not in st.session_state:
+        st.session_state.history = []
+
+    # ----------------------------
+    # PREDICT BUTTON
+    # ----------------------------
     if st.button("Analyze 🎯"):
 
         if review.strip() == "":
@@ -143,22 +174,45 @@ elif page == "🧠 Predict":
 
             prediction = model.predict(vector)
             proba = model.predict_proba(vector)[0]
-            confidence = np.max(proba)
+            confidence = float(np.max(proba))
 
-            st.markdown("### Result")
+            # result
+            if prediction[0] == 1:
+                result = "Positive 😊"
+                st.success("POSITIVE REVIEW 😊")
+            else:
+                result = "Negative 😞"
+                st.error("NEGATIVE REVIEW 😞")
 
-            col1, col2 = st.columns(2)
+            st.metric("Confidence", f"{confidence:.2f}")
+            st.progress(confidence)
 
-            with col1:
-                if prediction[0] == 1:
-                    st.success("😊 POSITIVE REVIEW")
-                else:
-                    st.error("😞 NEGATIVE REVIEW")
+            # ----------------------------
+            # STORE RESULT (HISTORY)
+            # ----------------------------
+            st.session_state.history.append({
+                "review": review,
+                "result": result,
+                "confidence": round(confidence, 2)
+            })
 
-            with col2:
-                st.metric("Confidence", f"{confidence:.2f}")
+    # ----------------------------
+    # HISTORY SECTION
+    # ----------------------------
+    st.markdown("---")
+    st.subheader("📌 Prediction History")
 
-            st.progress(float(confidence))
+    if len(st.session_state.history) == 0:
+        st.info("No predictions yet")
+    else:
+        for i, item in enumerate(reversed(st.session_state.history)):
+
+            st.markdown(f"""
+            **{i+1}. Review:** {item['review']}  
+            **Result:** {item['result']}  
+            **Confidence:** {item['confidence']}
+            ---
+            """)
 
 # ----------------------------
 # DASHBOARD PAGE
