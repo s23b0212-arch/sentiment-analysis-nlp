@@ -1,5 +1,5 @@
 import streamlit as st
-import pickle
+import joblib
 import re
 import nltk
 
@@ -10,9 +10,8 @@ from nltk.stem import WordNetLemmatizer
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-# Load model and vectorizer
-model = pickle.load(open("sentiment_model.pkl", "rb"))
-tfidf = pickle.load(open("tfidf.pkl", "rb"))
+model = joblib.load("sentiment_model.pkl")
+tfidf = joblib.load("tfidf.pkl")
 
 # Initialize NLP tools
 stop_words = set(stopwords.words('english'))
