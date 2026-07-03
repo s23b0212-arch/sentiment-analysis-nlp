@@ -43,6 +43,31 @@ review = st.text_area("Enter a movie review:")
 
 if st.button("Predict"):
 
+    if st.button("Predict Sentiment"):
+    if user_input.strip() == "":
+        st.warning("Please enter a review first.")
+    else:
+        cleaned = clean_text(user_input)
+        vector = tfidf.transform([cleaned])
+
+        prediction = model.predict(vector)
+        proba = model.predict_proba(vector)[0]
+
+        st.subheader("Result")
+
+        if prediction[0] == 1:
+            st.success("😊 Positive Review")
+        else:
+            st.error("😞 Negative Review")
+
+        st.write("### Confidence Score")
+
+        st.write(f"Positive: {proba[1]*100:.2f}%")
+        st.write(f"Negative: {proba[0]*100:.2f}%")
+
+        st.progress(float(proba[1]))
+    
+
     if review.strip() == "":
         st.warning("Please enter a movie review.")
     else:
