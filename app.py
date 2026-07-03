@@ -8,7 +8,6 @@ import seaborn as sns
 
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-
 from sklearn.metrics import confusion_matrix
 
 # ----------------------------
@@ -30,28 +29,17 @@ model = joblib.load("sentiment_model.pkl")
 tfidf = joblib.load("tfidf.pkl")
 
 # ----------------------------
-# STYLE (NETFLIX DARK UI)
+# CLEAN UI STYLE (NETFLIX THEME)
 # ----------------------------
 st.markdown("""
 <style>
-
-body {
+.stApp {
     background-color: #0f0f0f;
     color: white;
 }
 
-.stApp {
-    background-color: #0f0f0f;
-}
-
 h1, h2, h3 {
-    color: #ffffff;
-}
-
-.block-container {
-    padding-top: 2rem;
-    padding-left: 3rem;
-    padding-right: 3rem;
+    color: white;
 }
 
 .stButton button {
@@ -59,21 +47,18 @@ h1, h2, h3 {
     color: white;
     border-radius: 8px;
     font-weight: bold;
-    padding: 0.6rem 1rem;
 }
 
 .stTextArea textarea {
     background-color: #1c1c1c;
     color: white;
-    border-radius: 10px;
 }
 
 div[data-testid="metric-container"] {
     background-color: #1c1c1c;
+    padding: 10px;
     border-radius: 10px;
-    padding: 15px;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -92,131 +77,75 @@ def clean_text(text):
     return " ".join(words)
 
 # ----------------------------
-# SIDEBAR NAVIGATION (FIXED)
+# SIDEBAR NAVIGATION
 # ----------------------------
 st.sidebar.title("🎬 IMDb AI System")
-st.sidebar.markdown("---")
 
 page = st.sidebar.radio(
     "Navigation",
     ["🏠 Home", "🧠 Predict", "📊 Dashboard", "ℹ️ About"]
 )
 
-# ----------------------------
-# HOME
-# ----------------------------
+# ============================
+# HOME PAGE
+# ============================
 if page == "🏠 Home":
 
-    st.title("🎬 Netflix Style Sentiment Analyzer")
+    st.title("🎬 Sentiment Analysis AI App")
 
     st.markdown("""
     ### Welcome 👋
-    This system analyzes movie reviews using AI.
 
-    ✔ TF-IDF  
-    ✔ Logistic Regression  
-    ✔ NLP Text Processing  
+    This system predicts movie review sentiment using:
+    - TF-IDF
+    - Logistic Regression
+    - NLP Text Processing
 
     ---
     """)
 
-    st.markdown("### 🔥 What you can do")
-    st.info("Go to Predict page to test movie reviews")
+    st.success("Go to Predict page to test the model")
 
+# ============================
+# PREDICT PAGE
+# ============================
 elif page == "🧠 Predict":
 
-    st.title("🧠 Movie Review Sentiment Prediction")
+    st.title("🧠 Movie Sentiment Prediction")
 
-    st.markdown("### 💡 Try Sample Reviews")
-
-    # ----------------------------
-    # SAMPLE BUTTONS (RECOMMENDATIONS)
-    # ----------------------------
-    col1, col2, col3 = st.columns(3)
-
-    samples = [
-        "This movie was absolutely amazing and I loved every moment",
-        "Worst movie ever. Waste of time and boring plot",
-        "The acting was great but the story was average"
-    ]
-
-    if col1.button("😊 Positive Sample"):
-        review = samples[0]
-
-    if col2.button("😡 Negative Sample"):
-        review = samples[1]
-
-    if col3.button("😐 Neutral Sample"):
-        review = samples[2]
-
-    # ----------------------------
-    # INPUT BOX
-    # ----------------------------
-    review = st.text_area("Enter your movie review:", value="")
-
-    # ----------------------------
-    # SESSION STORAGE (HISTORY)
-    # ----------------------------
-    if "history" not in st.session_state:
-        st.session_state.history = []
-elif page == "🧠 Predict":
-
-    st.title("🧠 Movie Review Sentiment Prediction")
-
-    st.markdown("### 💡 Quick Select Review (No Typing Needed)")
+    st.markdown("### 🎯 Select a Sample Review")
 
     samples = {
         "😊 Positive": "This movie was absolutely amazing and I loved every moment",
         "😡 Negative": "Worst movie ever. Waste of time and boring plot",
-        "😐 Neutral": "The acting was great but the story was average"
+        "😐 Neutral": "The acting was great but the story was average",
+        "✍️ Custom": ""
     }
 
-    # ----------------------------
-    # INIT SESSION STATE
-    # ----------------------------
+    choice = st.selectbox("Choose review type:", list(samples.keys()))
+
     if "review" not in st.session_state:
         st.session_state.review = ""
 
-    # ----------------------------
-    # SAMPLE BUTTONS (FIXED)
-    # ----------------------------
-    col1, col2, col3 = st.columns(3)
+    if choice != "✍️ Custom":
+        st.session_state.review = samples[choice]
 
-    if col1.button("😊 Positive"):
-        st.session_state.review = samples["😊 Positive"]
-
-    if col2.button("😡 Negative"):
-        st.session_state.review = samples["😡 Negative"]
-
-    if col3.button("😐 Neutral"):
-        st.session_state.review = samples["😐 Neutral"]
-
-    st.markdown("---")
-
-    # ----------------------------
-    # INPUT BOX (NOW CONTROLLED)
-    # ----------------------------
     review = st.text_area(
-        "Enter or select a review:",
+        "Enter your review:",
         value=st.session_state.review,
         height=120
     )
 
     st.session_state.review = review
 
-    # ----------------------------
-    # HISTORY INIT
-    # ----------------------------
+    # HISTORY
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    # ----------------------------
-    # PREDICT BUTTON
-    # ----------------------------
     if st.button("Analyze 🎯"):
 
         if review.strip() == "":
-            st.warning("Please enter or select a review")
+            st.warning("Please enter a review")
         else:
 
             cleaned = clean_text(review)
@@ -236,16 +165,13 @@ elif page == "🧠 Predict":
             st.metric("Confidence", f"{confidence:.2f}")
             st.progress(confidence)
 
-            # STORE HISTORY
             st.session_state.history.append({
                 "review": review,
                 "result": result,
                 "confidence": round(confidence, 2)
             })
 
-    # ----------------------------
     # HISTORY
-    # ----------------------------
     st.markdown("---")
     st.subheader("📌 Prediction History")
 
@@ -253,20 +179,19 @@ elif page == "🧠 Predict":
         st.info("No predictions yet")
     else:
         for i, item in enumerate(reversed(st.session_state.history)):
-
             st.markdown(f"""
             **{i+1}. Review:** {item['review']}  
             **Result:** {item['result']}  
-            **Confidence:** {item['confidence']}
+            **Confidence:** {item['confidence']}  
             ---
             """)
 
-# ----------------------------
+# ============================
 # DASHBOARD PAGE
-# ----------------------------
+# ============================
 elif page == "📊 Dashboard":
 
-    st.title("📊 Model Performance Dashboard")
+    st.title("📊 Model Performance")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -283,7 +208,7 @@ elif page == "📊 Dashboard":
     ax.bar(["Positive", "Negative"], [25000, 25000], color=["green", "red"])
     st.pyplot(fig)
 
-    st.markdown("### Confusion Matrix")
+    st.markdown("### Confusion Matrix (Demo)")
 
     y_true = [0,1,0,1,1,0,1,0,1,1]
     y_pred = [0,1,0,1,0,0,1,0,1,1]
@@ -292,29 +217,28 @@ elif page == "📊 Dashboard":
 
     fig2, ax2 = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax2)
-
     st.pyplot(fig2)
 
-# ----------------------------
+# ============================
 # ABOUT PAGE
-# ----------------------------
+# ============================
 elif page == "ℹ️ About":
 
-    st.title("ℹ️ About Project")
+    st.title("ℹ️ About This Project")
 
     st.markdown("""
     ### 🎯 Objective
-    Build NLP system for sentiment classification
+    Build NLP sentiment analysis system
 
     ### 🧠 Model
     TF-IDF + Logistic Regression
 
     ### 📊 Dataset
-    IMDb Movie Reviews (Kaggle)
+    IMDb Reviews (Kaggle)
 
     ### ⚙️ Features
-    - Text Cleaning
     - Sentiment Prediction
     - Confidence Score
-    - Visualization Dashboard
+    - Clean UI
+    - Dashboard Visualization
     """)
