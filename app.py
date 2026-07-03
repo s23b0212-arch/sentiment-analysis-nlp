@@ -122,19 +122,7 @@ elif page == "🧠 Predict":
         "✍️ Custom": ""
     }
 
-    choice = st.selectbox("Choose review type:", list(samples.keys()))
-
-    if "review" not in st.session_state:
-        st.session_state.review = ""
-
-    if choice != "✍️ Custom":
-        st.session_state.review = samples[choice]
-
-    review = st.text_area(
-        "Enter your review:",
-        value=st.session_state.review,
-        height=120
-    )
+    
 
     st.session_state.review = review
 
