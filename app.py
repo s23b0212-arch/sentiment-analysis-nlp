@@ -6,44 +6,80 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
-# Download NLTK resources (only if missing)
-try:
-    stop_words = set(stopwords.words("english"))
-except LookupError:
-    nltk.download("stopwords")
-    stop_words = set(stopwords.words("english"))
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(
+    page_title="IMDb Sentiment Analyzer",
+    layout="centered"
+)
 
-try:
-    lemmatizer = WordNetLemmatizer()
-    lemmatizer.lemmatize("movies")
-except LookupError:
-    nltk.download("wordnet")
-    lemmatizer = WordNetLemmatizer()
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.title("🎬 About This App")
+st.sidebar.write("NLP Sentiment Analysis System")
+st.sidebar.write("Model: Logistic Regression")
+st.sidebar.write("Vectorizer: TF-IDF")
+st.sidebar.write("Dataset: IMDb Reviews")
 
-# Load model and TF-IDF vectorizer
+# -----------------------------
+# LOAD MODEL
+# -----------------------------
 model = joblib.load("sentiment_model.pkl")
 tfidf = joblib.load("tfidf.pkl")
 
-# Text preprocessing
+# -----------------------------
+# DOWNLOAD NLTK DATA
+# -----------------------------
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+# -----------------------------
+# TEXT CLEANING FUNCTION
+# -----------------------------
 def clean_text(text):
-    text = text.lower()
+    text = str(text).lower()
     text = re.sub(r'[^a-zA-Z]', ' ', text)
     words = text.split()
     words = [w for w in words if w not in stop_words]
     words = [lemmatizer.lemmatize(w) for w in words]
     return " ".join(words)
 
-# Streamlit page
-st.set_page_config(page_title="Movie Review Sentiment Analysis", page_icon="🎬")
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("🎬 IMDb Movie Review Sentiment Analyzer")
+st.write("Type a movie review and the system will predict sentiment (Positive / Negative).")
 
-st.title("🎬 Movie Review Sentiment Analysis")
-st.write("This application predicts whether a movie review is **Positive** or **Negative** using Natural Language Processing (TF-IDF + Logistic Regression).")
+# -----------------------------
+# SAMPLE BUTTONS
+# -----------------------------
+col1, col2 = st.columns(2)
 
-review = st.text_area("Enter a movie review:")
+with col1:
+    if st.button("😊 Try Positive Example"):
+        st.session_state.input_text = "This movie was absolutely amazing and I loved it"
 
-if st.button("Predict"):
+with col2:
+    if st.button("😞 Try Negative Example"):
+        st.session_state.input_text = "This movie was boring and waste of time"
 
-    if st.button("Predict Sentiment"):
+# -----------------------------
+# INPUT BOX
+# -----------------------------
+user_input = st.text_area(
+    "Enter Movie Review:",
+    value=st.session_state.get("input_text", "")
+)
+
+# -----------------------------
+# PREDICTION
+# -----------------------------
+if st.button("Predict Sentiment"):
     if user_input.strip() == "":
         st.warning("Please enter a review first.")
     else:
@@ -60,34 +96,15 @@ if st.button("Predict"):
         else:
             st.error("😞 Negative Review")
 
-        st.write("### Confidence Score")
+        st.subheader("Confidence Score")
 
         st.write(f"Positive: {proba[1]*100:.2f}%")
         st.write(f"Negative: {proba[0]*100:.2f}%")
 
         st.progress(float(proba[1]))
-    
 
-    if review.strip() == "":
-        st.warning("Please enter a movie review.")
-    else:
-
-        cleaned = clean_text(review)
-        vector = tfidf.transform([cleaned])
-
-        prediction = model.predict(vector)[0]
-        probability = model.predict_proba(vector)
-
-        confidence = probability.max() * 100
-
-        st.subheader("Prediction")
-
-        if prediction == 1:
-            st.success("😊 Positive Review")
-        else:
-            st.error("😞 Negative Review")
-
-        st.write(f"**Confidence:** {confidence:.2f}%")
-
+# -----------------------------
+# FOOTER
+# -----------------------------
 st.markdown("---")
-st.caption("Developed using Python, NLTK, TF-IDF and Logistic Regression")
+st.markdown("Built with NLP ❤️ | TF-IDF + Logistic Regression")
