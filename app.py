@@ -124,7 +124,7 @@ elif page == "🧠 Predict":
 
     
 
-    st.session_state.review = review
+  
 
     # HISTORY
     if "history" not in st.session_state:
