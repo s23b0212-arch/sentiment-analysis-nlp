@@ -12,28 +12,86 @@ from nltk.stem import WordNetLemmatizer
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="IMDb Sentiment AI",
+    page_title="Sentiment Analysis System",
     layout="wide"
 )
 
 # =========================
-# DOWNLOAD NLTK DATA
+# STYLE (CHATGPT / NETFLIX CLEAN UI)
+# =========================
+st.markdown("""
+<style>
+
+html, body, [class*="css"]  {
+    background-color: #0e0e10;
+    color: #ffffff;
+    font-family: "Arial";
+}
+
+.stApp {
+    background-color: #0e0e10;
+}
+
+h1, h2, h3 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.stTextArea textarea {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #333;
+}
+
+.stSelectbox div {
+    background-color: #1a1a1a;
+    color: white;
+}
+
+.stButton button {
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+.stButton button:hover {
+    background-color: #6366f1;
+}
+
+.block-container {
+    padding-top: 2rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+}
+
+div[data-testid="metric-container"] {
+    background-color: #1a1a1a;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #333;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# SETUP
 # =========================
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-# =========================
-# LOAD MODEL
-# =========================
 model = joblib.load("sentiment_model.pkl")
 tfidf = joblib.load("tfidf.pkl")
 
-# =========================
-# TEXT CLEANING
-# =========================
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
+# =========================
+# CLEAN TEXT
+# =========================
 def clean_text(text):
     text = str(text).lower()
     text = re.sub(r'[^a-zA-Z]', ' ', text)
@@ -43,81 +101,77 @@ def clean_text(text):
     return " ".join(words)
 
 # =========================
-# AI TYPING EFFECT
+# AI TYPE EFFECT (NO EMOJI)
 # =========================
 def type_writer(text):
     box = st.empty()
     out = ""
     for c in text:
         out += c
-        box.markdown(f"### 🤖 {out}")
-        time.sleep(0.02)
+        box.markdown(f"### {out}")
+        time.sleep(0.015)
 
 # =========================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # =========================
-st.sidebar.title("🎬 IMDb Sentiment AI")
-page = st.sidebar.radio("Navigation", ["🏠 Home", "🧠 Predict", "📊 Dashboard", "ℹ️ About"])
+st.sidebar.title("Sentiment AI System")
+
+page = st.sidebar.radio(
+    "Navigation",
+    ["Home", "Predict", "Dashboard", "About"]
+)
 
 st.sidebar.markdown("---")
-st.sidebar.caption("NLP Project | TF-IDF + Logistic Regression")
+st.sidebar.caption("NLP System | TF-IDF + Logistic Regression")
 
 # =========================
 # HOME
 # =========================
-if page == "🏠 Home":
+if page == "Home":
 
-    st.title("🎬 Movie Review Sentiment Analysis System")
+    st.title("Sentiment Analysis System using NLP")
 
     st.markdown("""
-### 📌 Project Overview
-This system uses **Natural Language Processing (NLP)** to classify movie reviews.
+This system classifies movie reviews into positive or negative sentiment.
 
-✔ Input: Movie Review Text  
-✔ Output: Positive / Negative Sentiment  
+### Workflow
+- Text preprocessing
+- TF-IDF feature extraction
+- Logistic Regression model
 
----
-
-### 🧠 Workflow
-1. Text Cleaning  
-2. TF-IDF Vectorization  
-3. Logistic Regression Prediction  
-
----
-
-### 🎯 Objective
-To automate sentiment classification of movie reviews using machine learning.
+### Output
+Binary sentiment classification system
 """)
 
 # =========================
-# PREDICT PAGE
+# PREDICT
 # =========================
-elif page == "🧠 Predict":
+elif page == "Predict":
 
-    st.title("🧠 Sentiment Prediction Engine")
+    st.title("Sentiment Prediction")
 
     samples = [
         "Type your own review",
-        "This movie was amazing and I loved it",
-        "Worst movie ever, very boring",
-        "Acting was good but story was average"
+        "This movie was amazing and well directed",
+        "Worst movie I have ever watched",
+        "The story was average but acting was good"
     ]
 
-    choice = st.selectbox("Select a sample review:", samples)
+    choice = st.selectbox("Select input", samples)
 
     if choice == "Type your own review":
-        review = st.text_area("Enter your movie review:")
+        review = st.text_area("Enter review")
     else:
         review = choice
-        st.info(f"Selected: {choice}")
+        st.info("Sample selected")
 
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    if st.button("Analyze 🎯"):
+    if st.button("Analyze"):
 
         if review.strip() == "":
-            st.warning("Please enter a review")
+            st.warning("Input required")
         else:
 
             cleaned = clean_text(review)
@@ -128,21 +182,18 @@ elif page == "🧠 Predict":
 
             confidence = float(np.max(prob))
 
-            # LIVE METER
-            st.markdown("### ⚡ Live Sentiment Meter")
+            st.markdown("### Live Sentiment Score")
             st.progress(float(max(prob)))
 
-            # RESULT
             if pred[0] == 1:
-                type_writer("Positive Sentiment Detected 😊")
+                type_writer("Positive sentiment detected")
                 result = "Positive"
             else:
-                type_writer("Negative Sentiment Detected 😞")
+                type_writer("Negative sentiment detected")
                 result = "Negative"
 
             st.metric("Confidence", f"{confidence:.2%}")
 
-            # SAVE HISTORY
             st.session_state.history.append({
                 "review": review,
                 "result": result,
@@ -150,19 +201,17 @@ elif page == "🧠 Predict":
             })
 
     st.markdown("---")
-    st.subheader("📌 Prediction History")
+    st.subheader("History")
 
     for i, item in enumerate(reversed(st.session_state.history)):
-        st.write(f"{i+1}. {item['review']} → {item['result']} ({item['confidence']})")
+        st.write(f"{i+1}. {item['review']} -> {item['result']} ({item['confidence']})")
 
 # =========================
-# DASHBOARD (STATIC + CLEAN)
+# DASHBOARD
 # =========================
-elif page == "📊 Dashboard":
+elif page == "Dashboard":
 
-    st.title("📊 Model Performance Dashboard")
-
-    st.markdown("### 🧠 Model Metrics (From Training)")
+    st.title("Model Performance Dashboard")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -173,39 +222,37 @@ elif page == "📊 Dashboard":
 
     st.markdown("---")
 
-    st.markdown("### 📊 Confusion Matrix")
+    st.subheader("Confusion Matrix")
 
     cm = np.array([[4300, 700],
                    [600, 4400]])
 
-    st.write("TN FP\nFN TP")
-
     st.dataframe(cm)
 
     st.markdown("""
-### 📌 Insight
-The model performs well for binary sentiment classification using TF-IDF + Logistic Regression.
+Model shows stable performance for binary sentiment classification using TF-IDF and Logistic Regression.
 """)
 
 # =========================
 # ABOUT
 # =========================
-elif page == "ℹ️ About":
+elif page == "About":
 
-    st.title("ℹ️ Project Summary")
+    st.title("Project Overview")
 
     st.markdown("""
-### 🎓 Title
-Sentiment Analysis System using NLP
+### Title
+Sentiment Analysis using NLP
 
-### ⚙️ Methodology
-- Text Cleaning
-- TF-IDF Feature Extraction
-- Logistic Regression Model
+### Method
+- Text cleaning
+- TF-IDF
+- Logistic Regression
 
-### 📊 Output
-Classifies movie reviews as Positive or Negative.
+### Output
+Positive / Negative classification
 
-### 🚀 Note
-Dataset used only during training (Google Colab). Deployment uses trained model only.
+### Note
+Dataset used only during training phase in Google Colab.
+Deployment uses trained model only.
 """)
