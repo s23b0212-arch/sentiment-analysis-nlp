@@ -4,43 +4,22 @@ import re
 import nltk
 import numpy as np
 import time
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from sklearn.metrics import confusion_matrix
-
-# =========================
-# LOGIN SYSTEM
-# =========================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-def login():
-    st.title("🔐 AI System Login")
-
-    user = st.text_input("Username")
-    pw = st.text_input("Password", type="password")
-
-    if st.button("Login"):
-        if user == "admin" and pw == "1234":
-            st.session_state.logged_in = True
-            st.success("Access Granted")
-        else:
-            st.error("Invalid credentials")
-
-if not st.session_state.logged_in:
-    login()
-    st.stop()
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 # =========================
 # SETUP
 # =========================
+st.set_page_config(page_title="IMDb Sentiment AI", layout="wide")
+
 nltk.download('stopwords')
 nltk.download('wordnet')
-
-st.set_page_config(
-    page_title="IMDb Sentiment AI",
-    layout="wide"
-)
 
 # =========================
 # LOAD MODEL
@@ -49,7 +28,14 @@ model = joblib.load("sentiment_model.pkl")
 tfidf = joblib.load("tfidf.pkl")
 
 # =========================
-# CLEAN TEXT
+# LOAD DATASET (FOR REAL METRICS)
+# =========================
+df = pd.read_csv("IMDB Dataset.csv")  # make sure file is uploaded in repo
+
+df['sentiment'] = df['sentiment'].map({'positive': 1, 'negative': 0})
+
+# =========================
+# TEXT CLEANING
 # =========================
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
@@ -62,6 +48,23 @@ def clean_text(text):
     words = [lemmatizer.lemmatize(w) for w in words]
     return " ".join(words)
 
+df['clean_review'] = df['review'].apply(clean_text)
+
+# =========================
+# FEATURES
+# =========================
+X = tfidf.transform(df['clean_review'])
+y = df['sentiment']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+y_pred = model.predict(X_test)
+
+report = classification_report(y_test, y_pred, output_dict=True)
+cm = confusion_matrix(y_test, y_pred)
+
 # =========================
 # AI TYPE EFFECT
 # =========================
@@ -71,45 +74,44 @@ def type_writer(text):
     for c in text:
         out += c
         box.markdown(f"### 🤖 {out}")
-        time.sleep(0.02)
+        time.sleep(0.01)
 
 # =========================
-# SIDEBAR (CLEAN)
+# NLP CLEANING (UI USE)
 # =========================
-st.sidebar.title("🎬 IMDb AI System")
+def clean_text_ui(text):
+    text = str(text).lower()
+    text = re.sub(r'[^a-zA-Z]', ' ', text)
+    words = text.split()
+    words = [w for w in words if w not in stop_words]
+    words = [lemmatizer.lemmatize(w) for w in words]
+    return " ".join(words)
 
-page = st.sidebar.radio(
-    "Navigation",
-    ["🏠 Home", "🧠 Predict", "📊 Dashboard", "ℹ️ About"]
-)
-
-st.sidebar.markdown("---")
-st.sidebar.caption("NLP + Machine Learning Project")
+# =========================
+# SIDEBAR
+# =========================
+st.sidebar.title("🎬 IMDb Sentiment AI")
+page = st.sidebar.radio("Navigation", ["🏠 Home", "🧠 Predict", "📊 Dashboard", "ℹ️ About"])
 
 # =========================
 # HOME
 # =========================
 if page == "🏠 Home":
 
-    st.title("🎬 Sentiment Analysis System (NLP)")
+    st.title("🎬 NLP Sentiment Analysis System")
 
     st.markdown("""
 ### 📌 Project Overview
-This AI system classifies movie reviews into:
-- Positive 😊  
-- Negative 😞  
+This system classifies movie reviews using NLP.
 
----
-
-### 🧠 How It Works
-1. Text preprocessing (cleaning)
-2. TF-IDF feature extraction
-3. Logistic Regression classification
+✔ Dataset: IMDb Reviews  
+✔ Model: TF-IDF + Logistic Regression  
+✔ Output: Positive / Negative  
 
 ---
 
 ### 🎯 Objective
-Automate sentiment analysis for movie reviews using NLP.
+Automate sentiment classification using machine learning.
 """)
 
 # =========================
@@ -117,19 +119,19 @@ Automate sentiment analysis for movie reviews using NLP.
 # =========================
 elif page == "🧠 Predict":
 
-    st.title("🧠 Sentiment Prediction Engine")
+    st.title("🧠 Sentiment Prediction")
 
-    options = [
+    samples = [
         "Type your own review",
-        "Amazing movie, I love it",
-        "Worst movie ever, boring and slow",
+        "This movie was amazing and fantastic",
+        "Worst movie ever, I hated it",
         "Acting was good but story was average"
     ]
 
-    choice = st.selectbox("Select a review sample:", options)
+    choice = st.selectbox("Choose sample review:", samples)
 
     if choice == "Type your own review":
-        review = st.text_area("Enter review:")
+        review = st.text_area("Enter your review:")
     else:
         review = choice
         st.info(f"Selected: {choice}")
@@ -140,25 +142,20 @@ elif page == "🧠 Predict":
     if st.button("Analyze 🎯"):
 
         if review.strip() == "":
-            st.warning("Please enter a review")
+            st.warning("Please enter review")
         else:
 
-            cleaned = clean_text(review)
+            cleaned = clean_text_ui(review)
             vector = tfidf.transform([cleaned])
 
             pred = model.predict(vector)
             prob = model.predict_proba(vector)[0]
+
             confidence = float(np.max(prob))
 
-            # LIVE METER
             st.markdown("### ⚡ Live Sentiment Meter")
+            st.progress(float(max(prob)))
 
-            if prob[1] > prob[0]:
-                st.progress(prob[1])
-            else:
-                st.progress(prob[0])
-
-            # RESULT ANIMATION
             if pred[0] == 1:
                 type_writer("Positive Sentiment Detected 😊")
                 result = "Positive"
@@ -166,9 +163,8 @@ elif page == "🧠 Predict":
                 type_writer("Negative Sentiment Detected 😞")
                 result = "Negative"
 
-            st.metric("Confidence", f"{confidence:.2f}")
+            st.metric("Confidence", f"{confidence:.2%}")
 
-            # HISTORY
             st.session_state.history.append({
                 "review": review,
                 "result": result,
@@ -182,45 +178,36 @@ elif page == "🧠 Predict":
         st.write(f"{i+1}. {item['review']} → {item['result']} ({item['confidence']})")
 
 # =========================
-# DASHBOARD (REPORT STYLE)
+# DASHBOARD (REAL METRICS)
 # =========================
 elif page == "📊 Dashboard":
 
-    st.title("📊 Model Performance Dashboard")
+    st.title("📊 Model Evaluation Dashboard")
 
-    st.markdown("""
-### 🧠 Model Summary
-- Algorithm: Logistic Regression  
-- Features: TF-IDF  
-- Dataset: IMDb Reviews (50,000)
-
----
-
-### 📈 Performance
-""")
+    acc = report["accuracy"]
+    precision = report["1"]["precision"]
+    recall = report["1"]["recall"]
+    f1 = report["1"]["f1-score"]
 
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("Accuracy", "88%")
-    col2.metric("Precision", "0.88")
-    col3.metric("Recall", "0.88")
-    col4.metric("F1-score", "0.88")
+    col1.metric("Accuracy", f"{acc:.2f}")
+    col2.metric("Precision", f"{precision:.2f}")
+    col3.metric("Recall", f"{recall:.2f}")
+    col4.metric("F1 Score", f"{f1:.2f}")
 
     st.markdown("---")
 
-    st.markdown("### 🧠 Confusion Matrix")
+    st.subheader("📊 Confusion Matrix (REAL)")
 
-    y_true = [0,1,0,1,1,0,1,0,1,1]
-    y_pred = [0,1,0,1,0,0,1,0,1,1]
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
 
-    cm = confusion_matrix(y_true, y_pred)
-
-    st.write("TN FP\nFN TP")
-    st.dataframe(cm)
+    st.pyplot(fig)
 
     st.markdown("""
-### 📌 Insight
-Model performs well for binary sentiment classification and is suitable as a baseline NLP system.
+### 📌 Analysis
+Model performs well for binary sentiment classification using TF-IDF + Logistic Regression.
 """)
 
 # =========================
@@ -228,7 +215,7 @@ Model performs well for binary sentiment classification and is suitable as a bas
 # =========================
 elif page == "ℹ️ About":
 
-    st.title("ℹ️ Project Report Summary")
+    st.title("ℹ️ Project Details")
 
     st.markdown("""
 ### 🎓 Title
@@ -238,12 +225,12 @@ Sentiment Analysis System using NLP
 - Data Cleaning
 - TF-IDF
 - Logistic Regression
-- Evaluation Metrics
+- Evaluation using classification report
 
-### 📊 Outcome
-Achieved ~88% accuracy in classifying movie reviews.
+### 📊 Result
+Achieved ~88% accuracy on IMDb dataset.
 
 ### 🚀 Future Work
 - Use BERT / Deep Learning
-- Real-time web integration
+- Improve sarcasm detection
 """)
