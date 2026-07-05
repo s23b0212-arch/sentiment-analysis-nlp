@@ -1,4 +1,4 @@
-import streamlit as st
+full app.py..import streamlit as st
 import pandas as pd
 import numpy as np
 
@@ -35,6 +35,7 @@ st.markdown("""
 # ======================
 data = {
     "review": [
+        # ================= POSITIVE =================
         "This movie is amazing",
         "I absolutely loved this film",
         "Fantastic story and great acting",
@@ -46,6 +47,7 @@ data = {
         "Amazing performance by actors",
         "I love this movie so much",
 
+        # ================= NEGATIVE =================
         "Worst movie ever",
         "I hate this film",
         "Very boring and waste of time",
@@ -58,10 +60,14 @@ data = {
         "Not good at all"
     ],
     "sentiment": [
+        # 1 = Positive
         1,1,1,1,1,1,1,1,1,1,
+
+        # 0 = Negative
         0,0,0,0,0,0,0,0,0,0
     ]
 }
+
 
 df = pd.DataFrame(data)
 
@@ -137,17 +143,17 @@ This project builds an NLP-based system to automatically classify movie reviews 
     st.subheader("NLP Pipeline")
 
     st.write("""
-Text Input → Preprocessing → TF-IDF → Logistic Regression → Sentiment → Emotion → Dashboard
+Text Input → Preprocessing → TF-IDF Vectorization → Logistic Regression → Sentiment Prediction → Emotion Detection → Visualization Dashboard
 """)
 
     st.subheader("Real-World Application")
 
     st.warning("""
-Used in Netflix, IMDb, YouTube comments, social media analytics for understanding user feedback.
+This system can be used in platforms like Netflix, IMDb, and social media analytics tools to automatically understand user opinions and improve recommendation systems.
 """)
 
 # ======================
-# PREDICT (🔥 FIXED UI HERE)
+# PREDICT
 # ======================
 elif menu == "Predict":
 
@@ -172,19 +178,13 @@ elif menu == "Predict":
         sentiment = "Positive 😊" if pred == 1 else "Negative 😡"
         emotion = get_emotion(user_input)
 
-        st.markdown("### 🧠 AI Analysis Result")
-
         col1, col2 = st.columns(2)
 
         with col1:
             if pred == 1:
-                st.success("😊 Positive Review Detected!")
-                st.info("User shows satisfaction and positive emotion.")
+                st.success(f"{sentiment} | {emotion}")
             else:
-                st.error("😡 Negative Review Detected!")
-                st.warning("User shows dissatisfaction and negative emotion.")
-
-            st.caption(f"Sentiment: {sentiment} | Emotion: {emotion}")
+                st.error(f"{sentiment} | {emotion}")
 
         with col2:
             st.metric("Confidence Score", f"{max(prob)*100:.2f}%")
@@ -212,36 +212,46 @@ elif menu == "Dashboard":
 
     col1, col2 = st.columns(2)
 
+    # PIE
     with col1:
         sentiment_counts = df_hist["sentiment"].value_counts()
-        fig = px.pie(values=sentiment_counts.values,
-                     names=sentiment_counts.index,
-                     hole=0.5,
-                     title="Sentiment Breakdown")
+        fig = px.pie(
+            values=sentiment_counts.values,
+            names=sentiment_counts.index,
+            hole=0.5,
+            title="Sentiment Breakdown"
+        )
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
 
+    # BAR
     with col2:
         emotion_counts = df_hist["emotion"].value_counts()
-        fig2 = px.bar(x=emotion_counts.index,
-                      y=emotion_counts.values,
-                      title="Emotion Frequency",
-                      color=emotion_counts.values)
+        fig2 = px.bar(
+            x=emotion_counts.index,
+            y=emotion_counts.values,
+            title="Emotion Frequency",
+            color=emotion_counts.values
+        )
         fig2.update_layout(height=350)
         st.plotly_chart(fig2, use_container_width=True)
 
+    # HEATMAP
     st.subheader("Sentiment & Emotion Correlation")
     matrix = pd.crosstab(df_hist["emotion"], df_hist["sentiment"])
     fig3 = px.imshow(matrix, text_auto=True, height=350)
     st.plotly_chart(fig3, use_container_width=True)
 
+    # TREND
     st.subheader("Sentiment Trend Over Time")
     df_hist["index"] = range(len(df_hist))
 
-    fig4 = px.line(df_hist,
-                   x="index",
-                   y=df_hist["sentiment"].map({"Positive 😊": 1, "Negative 😡": -1}),
-                   markers=True)
+    fig4 = px.line(
+        df_hist,
+        x="index",
+        y=df_hist["sentiment"].map({"Positive 😊": 1, "Negative 😡": -1}),
+        markers=True
+    )
     fig4.update_layout(height=300)
     st.plotly_chart(fig4, use_container_width=True)
 
