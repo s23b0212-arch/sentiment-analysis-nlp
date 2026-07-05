@@ -1,194 +1,185 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import pickle
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from wordcloud import WordCloud
-import joblib
 
-model = joblib.load("sentiment_model.pkl")
-tfidf = joblib.load("tfidf.pkl")
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-
-# =========================
+# ======================
 # PAGE CONFIG
-# =========================
-st.set_page_config(page_title="Smart Sentiment Dashboard", layout="wide")
+# ======================
+st.set_page_config(page_title="Smart Movie Sentiment Dashboard", layout="wide")
 
 st.title("🎬 Smart Movie Sentiment Analytics Dashboard")
 st.markdown("NLP System using TF-IDF + Logistic Regression + Emotion Analytics")
 
-# =========================
-# LOAD MODEL (IMPORTANT FIX)
-# =========================
-model = pickle.load(open("sentiment_model.pkl", "rb"))
-tfidf = pickle.load(open("tfidf.pkl", "rb"))
+# ======================
+# LOAD MODEL (FIXED)
+# ======================
+model = joblib.load("sentiment_model.pkl")
+tfidf = joblib.load("tfidf.pkl")
 
-# =========================
-# SAMPLE DATA (NO CSV ERROR ANYMORE)
-# =========================
-data = {
-    "review": [
-        "This movie is amazing and I love it",
-        "Worst movie ever, very boring",
-        "It was okay not too bad",
-        "I really enjoyed the story",
-        "Terrible acting and bad plot",
-        "Fantastic film with great actors",
-        "Not good, not bad, just average",
-        "I hate this movie so much",
-        "Beautiful cinematography and great music",
-        "Waste of time"
-    ],
-    "sentiment": [1,0,1,1,0,1,1,0,1,0]
-}
-
-df = pd.DataFrame(data)
-
-# =========================
-# SIDEBAR MENU
-# =========================
-menu = st.sidebar.radio(
-    "Navigation",
-    ["🏠 Overview", "💬 Predict", "📁 CSV Upload", "📊 Analytics", "📜 History"]
-)
-
-# =========================
-# HISTORY STORAGE
-# =========================
+# ======================
+# SESSION HISTORY
+# ======================
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# =========================
+# ======================
+# EMOTION FUNCTION
+# ======================
+def get_emotion(text):
+    text = text.lower()
+    if any(w in text for w in ["love", "amazing", "great", "good", "fantastic"]):
+        return "Joy 😊"
+    elif any(w in text for w in ["bad", "worst", "boring", "hate"]):
+        return "Anger 😡"
+    elif any(w in text for w in ["sad", "disappointed", "cry"]):
+        return "Sadness 😢"
+    elif any(w in text for w in ["wow", "surprise", "unexpected"]):
+        return "Surprise 😲"
+    else:
+        return "Neutral 😐"
+
+# ======================
+# SIDEBAR MENU
+# ======================
+menu = st.sidebar.radio(
+    "Navigation",
+    ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📜 History"]
+)
+
+# ======================
 # OVERVIEW
-# =========================
+# ======================
 if menu == "🏠 Overview":
     st.header("📌 Project Overview")
-
-    st.success("AI system that detects sentiment from movie reviews")
-
     st.write("""
+This system performs **Movie Sentiment Analysis using NLP**.
+
 ### Features:
-- Sentiment Classification (Positive / Negative)
-- TF-IDF + Logistic Regression Model
-- Confusion Matrix & Metrics
-- WordCloud Analysis
-- CSV Bulk Prediction
-- Download Results
-- History Tracking
+✔ Sentiment Prediction (Positive / Negative)  
+✔ Emotion Detection  
+✔ Confidence Score  
+✔ Sample Review Dropdown  
+✔ Analytics Dashboard  
+✔ History Tracking  
+✔ Download Results  
+
+### NLP Pipeline:
+Text → TF-IDF → Logistic Regression → Prediction
 """)
 
-# =========================
-# PREDICT
-# =========================
-elif menu == "💬 Predict":
-    st.header("💬 Live Sentiment Prediction")
+# ======================
+# PREDICTION PAGE
+# ======================
+elif menu == "🎯 Predict":
+    st.header("💬 Sentiment Prediction Engine")
 
-    review = st.text_area("Enter movie review:")
+    sample_reviews = [
+        "This movie is amazing!",
+        "Worst movie ever",
+        "It was okay not bad",
+        "I love the acting",
+        "Very boring film",
+        "Fantastic storyline and great acting",
+        "I hate this movie so much"
+    ]
 
-    if st.button("Analyze"):
-        if review.strip() == "":
-            st.warning("Please enter text")
+    input_type = st.radio("Choose input method:", ["Type Review", "Use Sample Review"])
+
+    if input_type == "Type Review":
+        user_input = st.text_area("Enter your movie review:")
+    else:
+        user_input = st.selectbox("Select a sample review:", sample_reviews)
+
+    if st.button("Analyze Sentiment 🚀"):
+
+        if user_input.strip() == "":
+            st.warning("Please enter a review")
         else:
-            vec = tfidf.transform([review])
+            vec = tfidf.transform([user_input])
             pred = model.predict(vec)[0]
+            prob = model.predict_proba(vec)[0]
 
-            sentiment = "Positive 😊" if pred == 1 else "Negative 😡"
+            confidence = int(max(prob) * 100)
 
-            st.subheader("Result")
-            st.success(sentiment)
+            # SENTIMENT RESULT
+            if pred == 1:
+                st.success("😊 Positive Review")
+            else:
+                st.error("😡 Negative Review")
 
+            st.progress(confidence)
+            st.write(f"Confidence Score: {confidence}%")
+
+            # EMOTION
+            emotion = get_emotion(user_input)
+            st.info(f"Detected Emotion: {emotion}")
+
+            # SAVE HISTORY
             st.session_state.history.append({
-                "review": review,
-                "sentiment": sentiment
+                "review": user_input,
+                "sentiment": "Positive" if pred == 1 else "Negative",
+                "emotion": emotion,
+                "confidence": confidence
             })
 
-# =========================
-# CSV UPLOAD
-# =========================
-elif menu == "📁 CSV Upload":
-    st.header("📁 Bulk Review Analysis")
+# ======================
+# DASHBOARD
+# ======================
+elif menu == "📊 Dashboard":
+    st.header("📊 Analytics Dashboard")
 
-    file = st.file_uploader("Upload CSV file (must have column: review)", type=["csv"])
+    if len(st.session_state.history) > 0:
 
-    if file:
-        data = pd.read_csv(file)
+        df = pd.DataFrame(st.session_state.history)
 
-        if "review" not in data.columns:
-            st.error("CSV must contain 'review' column")
-        else:
-            vec = tfidf.transform(data["review"])
-            preds = model.predict(vec)
+        col1, col2, col3 = st.columns(3)
 
-            data["sentiment"] = ["Positive 😊" if p==1 else "Negative 😡" for p in preds]
+        col1.metric("Total Reviews", len(df))
+        col2.metric("Positive", (df["sentiment"] == "Positive").sum())
+        col3.metric("Negative", (df["sentiment"] == "Negative").sum())
 
-            st.dataframe(data)
+        st.subheader("Sentiment Breakdown")
 
-            st.download_button(
-                "Download Results",
-                data.to_csv(index=False).encode("utf-8"),
-                "results.csv",
-                "text/csv"
-            )
+        fig, ax = plt.subplots()
+        sns.countplot(x=df["sentiment"], ax=ax)
+        st.pyplot(fig)
 
-# =========================
-# ANALYTICS DASHBOARD
-# =========================
-elif menu == "📊 Analytics":
-    st.header("📊 Model Performance")
+        st.subheader("Emotion Breakdown")
 
-    X = tfidf.transform(df["review"])
-    y = df["sentiment"]
+        fig2, ax2 = plt.subplots()
+        sns.countplot(x=df["emotion"], ax=ax2)
+        plt.xticks(rotation=45)
+        st.pyplot(fig2)
 
-    y_pred = model.predict(X)
+        st.subheader("Download Data")
 
-    acc = accuracy_score(y, y_pred)
-    prec = precision_score(y, y_pred)
-    rec = recall_score(y, y_pred)
-    f1 = f1_score(y, y_pred)
+        st.download_button(
+            "Download CSV",
+            df.to_csv(index=False).encode("utf-8"),
+            "sentiment_results.csv",
+            "text/csv"
+        )
 
-    col1, col2, col3, col4 = st.columns(4)
+    else:
+        st.info("No data yet. Go to Predict page first.")
 
-    col1.metric("Accuracy", f"{acc:.2f}")
-    col2.metric("Precision", f"{prec:.2f}")
-    col3.metric("Recall", f"{rec:.2f}")
-    col4.metric("F1 Score", f"{f1:.2f}")
-
-    st.subheader("Confusion Matrix")
-    cm = confusion_matrix(y, y_pred)
-
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-    st.pyplot(fig)
-
-    st.subheader("Word Cloud")
-
-    all_words = " ".join(df["review"])
-    wc = WordCloud(width=800, height=400, background_color="white").generate(all_words)
-
-    fig2, ax2 = plt.subplots()
-    ax2.imshow(wc)
-    ax2.axis("off")
-    st.pyplot(fig2)
-
-# =========================
+# ======================
 # HISTORY
-# =========================
+# ======================
 elif menu == "📜 History":
     st.header("Prediction History")
 
     if len(st.session_state.history) == 0:
         st.info("No history yet")
     else:
-        hist = pd.DataFrame(st.session_state.history)
-        st.dataframe(hist)
+        df = pd.DataFrame(st.session_state.history)
+        st.dataframe(df)
 
         st.download_button(
             "Download History",
-            hist.to_csv(index=False).encode("utf-8"),
+            df.to_csv(index=False).encode("utf-8"),
             "history.csv",
             "text/csv"
         )
