@@ -125,7 +125,7 @@ This project builds an NLP-based system to automatically classify movie reviews 
 Text Input → Preprocessing → TF-IDF Vectorization → Logistic Regression → Sentiment Prediction → Emotion Detection → Visualization Dashboard
 """)
 
-    st.subheader("🌍 Real-World Application")
+    st.subheader("Real-World Application")
 
     st.warning("""
 This system can be used in platforms like Netflix, IMDb, and social media analytics tools to automatically understand user opinions and improve recommendation systems.
