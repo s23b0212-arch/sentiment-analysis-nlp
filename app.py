@@ -35,18 +35,25 @@ st.markdown("""
 # ======================
 data = {
     "review": [
-        "This movie is amazing and I love it",
-        "Worst movie ever, very boring",
-        "Absolutely terrible acting",
-        "I hate this film",
-        "Fantastic and very enjoyable movie",
-        "Worst experience ever",
-        "I really love this movie",
-        "Boring and waste of time",
-        "Great story and amazing acting",
-        "Not good at all"
+        "I love this movie it is amazing",
+        "This film is fantastic and great",
+        "Very enjoyable and good story",
+        "Absolutely wonderful experience",
+        "Worst movie ever I hate it",
+        "Terrible acting and bad plot",
+        "Very boring waste of time",
+        "I did not like this movie",
+        "Amazing acting and great visuals",
+        "Not good very disappointing",
+        "I really love this film",
+        "This movie is bad and boring",
+        "Fantastic story I enjoyed it",
+        "I hate this movie so much",
+        "It was an excellent movie"
     ],
-    "sentiment": [1,0,0,0,1,0,1,0,1,0]
+    "sentiment": [
+        1,1,1,1,0,0,0,0,1,0,1,0,1,0,1
+    ]
 }
 
 df = pd.DataFrame(data)
@@ -57,16 +64,13 @@ df = pd.DataFrame(data)
 def get_emotion(text):
     text = text.lower()
 
-    joy_words = ["amazing", "love", "great", "fantastic", "good", "enjoy"]
-    anger_words = ["hate", "worst", "boring", "terrible", "bad", "waste"]
-    sad_words = ["sad", "disappointed", "cry"]
+    joy_words = ["love", "amazing", "great", "fantastic", "good", "excellent", "enjoy"]
+    anger_words = ["hate", "worst", "boring", "terrible", "bad", "waste", "disappointing"]
 
     if any(w in text for w in joy_words):
         return "Joy 😊"
     elif any(w in text for w in anger_words):
         return "Anger 😡"
-    elif any(w in text for w in sad_words):
-        return "Sadness 😢"
     else:
         return "Neutral 😐"
 
