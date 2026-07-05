@@ -22,7 +22,7 @@ st.markdown("NLP System using TF-IDF + Logistic Regression")
 # ======================
 # LOAD DATA
 # ======================
-df = pd.read_csv("IMDB Dataset.csv")
+
 df.columns = df.columns.str.strip().str.lower()
 df['sentiment'] = df['sentiment'].map({'positive':1, 'negative':0})
 
