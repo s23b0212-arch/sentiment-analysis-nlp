@@ -31,14 +31,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ======================
-# DATASET
-# ======================
-# ======================
 # DATASET (FIXED & BALANCED)
 # ======================
 data = {
     "review": [
-        # POSITIVE REVIEWS
         "I love this movie it is amazing",
         "This film is fantastic and great",
         "Very enjoyable and good story",
@@ -49,7 +45,6 @@ data = {
         "Brilliant movie highly recommended",
         "One of the best movies I have seen",
 
-        # NEGATIVE REVIEWS
         "Worst movie ever I hate it",
         "Terrible acting and bad plot",
         "Very boring waste of time",
@@ -61,13 +56,11 @@ data = {
         "Completely horrible film"
     ],
     "sentiment": [
-        # 9 positive
         1,1,1,1,1,1,1,1,1,
-
-        # 9 negative
         0,0,0,0,0,0,0,0,0
     ]
 }
+
 df = pd.DataFrame(data)
 
 # ======================
@@ -76,8 +69,8 @@ df = pd.DataFrame(data)
 def get_emotion(text):
     text = text.lower()
 
-    joy_words = ["love", "amazing", "great", "fantastic", "good", "excellent", "enjoy"]
-    anger_words = ["hate", "worst", "boring", "terrible", "bad", "waste", "disappointing"]
+    joy_words = ["love", "amazing", "great", "fantastic", "good", "excellent", "enjoy", "best", "brilliant"]
+    anger_words = ["hate", "worst", "boring", "terrible", "bad", "waste", "disappointing", "awful"]
 
     if any(w in text for w in joy_words):
         return "Joy 😊"
@@ -115,7 +108,7 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ======================
-# OVERVIEW (FULL A+ CONTENT)
+# OVERVIEW
 # ======================
 if menu == "Overview":
 
@@ -152,7 +145,7 @@ This system can be used in platforms like Netflix, IMDb, and social media analyt
 """)
 
 # ======================
-# PREDICT PAGE
+# PREDICT
 # ======================
 elif menu == "Predict":
 
@@ -190,7 +183,6 @@ elif menu == "Predict":
 
         st.progress(int(max(prob)*100))
 
-        # FIXED HISTORY (NOW INCLUDES EMOTION)
         st.session_state.history.append({
             "review": user_input,
             "sentiment": sentiment,
@@ -198,7 +190,7 @@ elif menu == "Predict":
         })
 
 # ======================
-# DASHBOARD (FIXED + SAFE)
+# DASHBOARD
 # ======================
 elif menu == "Dashboard":
 
@@ -212,7 +204,7 @@ elif menu == "Dashboard":
 
     col1, col2 = st.columns(2)
 
-    # SENTIMENT PIE
+    # PIE
     with col1:
         sentiment_counts = df_hist["sentiment"].value_counts()
         fig = px.pie(
@@ -224,7 +216,7 @@ elif menu == "Dashboard":
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
 
-    # EMOTION BAR
+    # BAR
     with col2:
         emotion_counts = df_hist["emotion"].value_counts()
         fig2 = px.bar(
