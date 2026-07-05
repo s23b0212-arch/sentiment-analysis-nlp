@@ -5,6 +5,10 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 from wordcloud import WordCloud
+import joblib
+
+model = joblib.load("sentiment_model.pkl")
+tfidf = joblib.load("tfidf.pkl")
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
