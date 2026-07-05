@@ -1,179 +1,145 @@
 import streamlit as st
-import joblib
-import numpy as np
 import pandas as pd
-import re
-import nltk
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-from sklearn.metrics import confusion_matrix
+# ======================
+# PAGE CONFIG
+# ======================
+st.set_page_config(page_title="Smart Movie Sentiment Dashboard", layout="wide")
 
-# -------------------------
-# SETUP
-# -------------------------
-nltk.download('stopwords')
-nltk.download('wordnet')
+st.title("🎬 Smart Movie Sentiment Analytics Dashboard")
+st.markdown("NLP System using TF-IDF + Logistic Regression")
 
-st.set_page_config(
-    page_title="NLP Sentiment System",
-    layout="wide"
+# ======================
+# LOAD DATA
+# ======================
+df = pd.read_csv("IMDB Dataset.csv")
+df.columns = df.columns.str.strip().str.lower()
+df['sentiment'] = df['sentiment'].map({'positive':1, 'negative':0})
+
+# ======================
+# MODEL TRAINING
+# ======================
+X_train, X_test, y_train, y_test = train_test_split(
+    df['review'], df['sentiment'], test_size=0.2, random_state=42
 )
 
-# -------------------------
-# LOAD MODEL
-# -------------------------
-model = joblib.load("sentiment_model.pkl")
-tfidf = joblib.load("tfidf.pkl")
+vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
 
-# -------------------------
-# TEXT CLEANING
-# -------------------------
-stop_words = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
 
-def clean_text(text):
-    text = str(text).lower()
-    text = re.sub(r'[^a-zA-Z]', ' ', text)
-    words = text.split()
-    words = [w for w in words if w not in stop_words]
-    words = [lemmatizer.lemmatize(w) for w in words]
-    return " ".join(words)
+model = LogisticRegression()
+model.fit(X_train_vec, y_train)
 
-# -------------------------
-# SESSION STATE
-# -------------------------
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# -------------------------
+# ======================
 # SIDEBAR
-# -------------------------
-page = st.sidebar.radio(
-    "Navigation",
-    ["Project Overview", "Sentiment Prediction", "Model Dashboard", "Result History"]
-)
+# ======================
+menu = st.sidebar.radio("Navigation", ["🏠 Overview", "🎯 Predict", "📊 Analytics Dashboard"])
 
-# -------------------------
-# PAGE 1: OVERVIEW
-# -------------------------
-if page == "Project Overview":
+# ======================
+# HOME
+# ======================
+if menu == "🏠 Overview":
+    st.header("📌 Project Overview")
 
-    st.title("Sentiment Analysis System for Movie Reviews")
+    st.write("""
+This system performs **Movie Sentiment Analysis using NLP**.
 
-    st.markdown("""
-### Problem Statement
-Manual analysis of movie reviews is inefficient and time-consuming due to large volumes of user-generated data.
+### 🔥 Features:
+- Accepts movie review text OR link input (simulated)
+- Predicts sentiment (Positive / Negative)
+- Shows confidence score
+- Provides full analytics dashboard
 
-### Objective
-To develop an NLP system that classifies movie reviews into positive or negative sentiments.
-
-### Target Users
-- Movie platforms
-- Researchers
-- General users
-
-### Methodology
-- Text preprocessing (NLTK)
-- TF-IDF feature extraction
-- Logistic Regression model
-- Evaluation using classification metrics
-- Deployment using Streamlit
-
-### Expected Output
-A real-time sentiment classification system for movie reviews.
+### 🧠 NLP Process:
+Text → TF-IDF → Logistic Regression → Prediction
 """)
 
-# -------------------------
-# PAGE 2: PREDICTION
-# -------------------------
-elif page == "Sentiment Prediction":
+    st.info("👉 This system helps analyze audience opinion on movies automatically.")
 
-    st.title("Sentiment Prediction Module")
+# ======================
+# PREDICTION PAGE
+# ======================
+elif menu == "🎯 Predict":
+    st.header("💬 Sentiment Prediction Engine")
 
-    samples = [
-        "This movie was amazing and enjoyable",
-        "Worst movie ever, very boring",
-        "The plot was average but acting was good"
-    ]
+    input_type = st.radio("Choose input type:", ["Movie Review Text", "Movie Link (simulated)"])
 
-    option = st.selectbox("Select Review Input", ["Custom Input"] + samples)
+    if input_type == "Movie Review Text":
+        user_input = st.text_area("Enter movie review:")
 
-    if option == "Custom Input":
-        review = st.text_area("Enter your review")
     else:
-        review = option
+        user_input = st.text_input("Paste movie link (we will extract text manually):")
 
-    if st.button("Predict Sentiment"):
+    if st.button("Analyze Sentiment"):
 
-        if review.strip() == "":
-            st.warning("Please enter a review")
+        if user_input.strip() == "":
+            st.warning("Please enter input!")
         else:
+            vec = vectorizer.transform([user_input])
+            pred = model.predict(vec)[0]
+            prob = model.predict_proba(vec)[0]
 
-            cleaned = clean_text(review)
-            vector = tfidf.transform([cleaned])
+            sentiment = "Positive 😊" if pred == 1 else "Negative 😞"
 
-            prediction = model.predict(vector)[0]
-            proba = model.predict_proba(vector)[0]
-            confidence = np.max(proba)
+            st.success(f"Prediction: {sentiment}")
+            st.info(f"Confidence Score: {max(prob)*100:.2f}%")
 
-            label = "Positive" if prediction == 1 else "Negative"
+            st.progress(int(max(prob)*100))
 
-            st.subheader("Prediction Result")
-            st.write("Sentiment:", label)
-            st.write("Confidence Score:", round(confidence, 2))
-            st.progress(float(confidence))
+# ======================
+# DASHBOARD
+# ======================
+elif menu == "📊 Analytics Dashboard":
+    st.header("📊 Model Performance Analytics")
 
-            st.session_state.history.append({
-                "Review": review,
-                "Sentiment": label,
-                "Confidence": round(confidence, 2)
-            })
+    y_pred = model.predict(X_test_vec)
 
-# -------------------------
-# PAGE 3: DASHBOARD (REAL METRICS)
-# -------------------------
-elif page == "Model Dashboard":
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    rec = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
 
-    st.title("Model Performance Dashboard")
-
+    # ===== METRICS =====
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("Accuracy", "88.4%")
-    col2.metric("Precision", "0.88")
-    col3.metric("Recall", "0.88")
-    col4.metric("F1 Score", "0.88")
+    col1.metric("Accuracy", f"{acc:.2f}")
+    col2.metric("Precision", f"{prec:.2f}")
+    col3.metric("Recall", f"{rec:.2f}")
+    col4.metric("F1 Score", f"{f1:.2f}")
 
-    st.markdown("---")
+    # ===== CONFUSION MATRIX =====
+    st.subheader("Confusion Matrix")
 
-    st.subheader("Confusion Matrix Analysis")
-
-    y_true = [0,1,0,1,1,0,1,0,1,1]
-    y_pred = [0,1,0,1,0,0,1,0,1,1]
-
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_test, y_pred)
 
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+
     st.pyplot(fig)
 
+    # ===== SENTIMENT DISTRIBUTION =====
     st.subheader("Sentiment Distribution")
 
     fig2, ax2 = plt.subplots()
-    ax2.bar(["Positive", "Negative"], [25000, 25000])
+    sns.countplot(x=df['sentiment'], ax=ax2)
+    ax2.set_xticklabels(["Negative", "Positive"])
+
     st.pyplot(fig2)
 
-# -------------------------
-# PAGE 4: HISTORY
-# -------------------------
-elif page == "Result History":
-
-    st.title("Prediction History")
-
-    if len(st.session_state.history) == 0:
-        st.info("No predictions yet")
-    else:
-        df = pd.DataFrame(st.session_state.history)
-        st.dataframe(df)
+    # ===== SAMPLE INSIGHT =====
+    st.subheader("Insight")
+    st.info("Model performs best on clear and simple movie reviews. Complex sarcasm may reduce accuracy.")
