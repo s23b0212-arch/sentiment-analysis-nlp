@@ -19,7 +19,7 @@ st.set_page_config(
 )
 
 # ======================
-# HEADER (SAAS STYLE)
+# HEADER
 # ======================
 st.markdown("""
     <h1 style='text-align: center; color: #4F8BF9;'>
@@ -31,7 +31,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ======================
-# DATASET (SAFE SMALL DATA)
+# DATASET
 # ======================
 data = {
     "review": [
@@ -52,6 +52,21 @@ data = {
 df = pd.DataFrame(data)
 
 # ======================
+# EMOTION FUNCTION
+# ======================
+def get_emotion(text):
+    text = text.lower()
+
+    if any(word in text for word in ["amazing", "love", "great", "fantastic", "good"]):
+        return "Joy 😊"
+    elif any(word in text for word in ["hate", "worst", "boring", "terrible"]):
+        return "Anger 😡"
+    elif any(word in text for word in ["sad", "bad", "waste"]):
+        return "Sadness 😢"
+    else:
+        return "Neutral 😐"
+
+# ======================
 # MODEL TRAINING
 # ======================
 X_train, X_test, y_train, y_test = train_test_split(
@@ -66,7 +81,7 @@ model = LogisticRegression()
 model.fit(X_train_vec, y_train)
 
 # ======================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # ======================
 menu = st.sidebar.radio(
     "Navigation",
@@ -80,23 +95,41 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ======================
-# OVERVIEW
+# OVERVIEW (FULL A+ CONTENT)
 # ======================
 if menu == "🏠 Overview":
 
-    st.subheader("Project Overview")
+    st.subheader("📌 Problem Statement")
 
     st.info("""
-    This system is a **Smart NLP Sentiment Analytics Dashboard** that:
+In today's digital world, movie reviews are generated in large volumes on platforms such as IMDb and social media.
 
-    ✔ Classifies movie reviews (Positive / Negative)  
-    ✔ Uses TF-IDF + Logistic Regression  
-    ✔ Tracks prediction history  
-    ✔ Visualizes sentiment analytics  
-    ✔ Supports CSV bulk analysis  
-    """)
+Manually analyzing these reviews is time-consuming, subjective, and inefficient.
 
-    st.success("Target: Real-time AI-powered text understanding system")
+This project builds an NLP-based system to automatically classify movie reviews into Positive or Negative sentiment using Machine Learning techniques.
+""")
+
+    st.subheader("🎯 Objectives")
+
+    st.success("""
+✔ To develop a sentiment analysis model using TF-IDF and Logistic Regression  
+✔ To classify movie reviews into Positive and Negative categories  
+✔ To detect basic emotional tone (Joy, Anger, Sadness, Neutral)  
+✔ To visualize sentiment insights using interactive dashboards  
+✔ To provide a real-time prediction interface for user input  
+""")
+
+    st.subheader("🧠 NLP Pipeline")
+
+    st.write("""
+Text Input → Preprocessing → TF-IDF Vectorization → Logistic Regression → Sentiment Prediction → Emotion Detection → Visualization Dashboard
+""")
+
+    st.subheader("🌍 Real-World Application")
+
+    st.warning("""
+This system can be used in platforms like Netflix, IMDb, and social media analytics tools to automatically understand user opinions and improve recommendation systems.
+""")
 
 # ======================
 # PREDICT PAGE
@@ -122,38 +155,44 @@ elif menu == "🎯 Predict":
         prob = model.predict_proba(vec)[0]
 
         sentiment = "Positive 😊" if pred == 1 else "Negative 😡"
+        emotion = get_emotion(user_input)
 
-        # KPI style output
         col1, col2 = st.columns(2)
 
         with col1:
             if pred == 1:
-                st.success(sentiment)
+                st.success(f"{sentiment} | {emotion}")
             else:
-                st.error(sentiment)
+                st.error(f"{sentiment} | {emotion}")
 
         with col2:
             st.metric("Confidence Score", f"{max(prob)*100:.2f}%")
 
         st.progress(int(max(prob)*100))
 
+        # FIXED HISTORY (NOW INCLUDES EMOTION)
         st.session_state.history.append({
             "review": user_input,
-            "sentiment": sentiment
+            "sentiment": sentiment,
+            "emotion": emotion
         })
 
-
 # ======================
-# DASHBOARD (MODERN SMALL GRAPHS)
+# DASHBOARD (FIXED + SAFE)
 # ======================
 elif menu == "📊 Dashboard":
+
     st.header("📊 Graphical Analytics Dashboard")
 
-    df_hist = pd.DataFrame(st.session_state.history) if len(st.session_state.history) > 0 else df
+    if len(st.session_state.history) == 0:
+        st.warning("No data yet. Please make predictions first.")
+        st.stop()
+
+    df_hist = pd.DataFrame(st.session_state.history)
 
     col1, col2 = st.columns(2)
 
-    # SENTIMENT PIE (SMALL)
+    # SENTIMENT PIE
     with col1:
         sentiment_counts = df_hist["sentiment"].value_counts()
         fig = px.pie(
@@ -165,7 +204,7 @@ elif menu == "📊 Dashboard":
         fig.update_layout(height=350)
         st.plotly_chart(fig, use_container_width=True)
 
-    # EMOTION BAR (SMALL)
+    # EMOTION BAR
     with col2:
         emotion_counts = df_hist["emotion"].value_counts()
         fig2 = px.bar(
@@ -195,7 +234,6 @@ elif menu == "📊 Dashboard":
     )
     fig4.update_layout(height=300)
     st.plotly_chart(fig4, use_container_width=True)
-
 
 # ======================
 # HISTORY
