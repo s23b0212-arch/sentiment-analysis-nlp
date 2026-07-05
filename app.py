@@ -85,7 +85,7 @@ model.fit(X_train_vec, y_train)
 # ======================
 menu = st.sidebar.radio(
     "Navigation",
-    ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📜 History"]
+    ["Overview", "Predict", "Dashboard", "History"]
 )
 
 # ======================
@@ -97,9 +97,9 @@ if "history" not in st.session_state:
 # ======================
 # OVERVIEW (FULL A+ CONTENT)
 # ======================
-if menu == "🏠 Overview":
+if menu == "Overview":
 
-    st.subheader("📌 Problem Statement")
+    st.subheader("Problem Statement")
 
     st.info("""
 In today's digital world, movie reviews are generated in large volumes on platforms such as IMDb and social media.
@@ -109,7 +109,7 @@ Manually analyzing these reviews is time-consuming, subjective, and inefficient.
 This project builds an NLP-based system to automatically classify movie reviews into Positive or Negative sentiment using Machine Learning techniques.
 """)
 
-    st.subheader("🎯 Objectives")
+    st.subheader("Objectives")
 
     st.success("""
 ✔ To develop a sentiment analysis model using TF-IDF and Logistic Regression  
@@ -119,7 +119,7 @@ This project builds an NLP-based system to automatically classify movie reviews 
 ✔ To provide a real-time prediction interface for user input  
 """)
 
-    st.subheader("🧠 NLP Pipeline")
+    st.subheader("NLP Pipeline")
 
     st.write("""
 Text Input → Preprocessing → TF-IDF Vectorization → Logistic Regression → Sentiment Prediction → Emotion Detection → Visualization Dashboard
@@ -134,9 +134,9 @@ This system can be used in platforms like Netflix, IMDb, and social media analyt
 # ======================
 # PREDICT PAGE
 # ======================
-elif menu == "🎯 Predict":
+elif menu == "Predict":
 
-    st.subheader("💬 Try Sentiment Prediction")
+    st.subheader("Try Sentiment Prediction")
 
     sample_reviews = [
         "This movie is amazing!",
@@ -180,9 +180,9 @@ elif menu == "🎯 Predict":
 # ======================
 # DASHBOARD (FIXED + SAFE)
 # ======================
-elif menu == "📊 Dashboard":
+elif menu == "Dashboard":
 
-    st.header("📊 Graphical Analytics Dashboard")
+    st.header("Graphical Analytics Dashboard")
 
     if len(st.session_state.history) == 0:
         st.warning("No data yet. Please make predictions first.")
@@ -238,9 +238,9 @@ elif menu == "📊 Dashboard":
 # ======================
 # HISTORY
 # ======================
-elif menu == "📜 History":
+elif menu == "History":
 
-    st.subheader("📜 Prediction History")
+    st.subheader("Prediction History")
 
     if len(st.session_state.history) == 0:
         st.info("No predictions yet.")
