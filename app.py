@@ -1,44 +1,44 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 import plotly.express as px
+
+from wordcloud import WordCloud
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 # ======================
 # PAGE CONFIG
 # ======================
-st.set_page_config(page_title="Movie Sentiment AI", layout="wide")
+st.set_page_config(page_title="NLP Sentiment Dashboard", layout="wide")
 
-st.title("🎬 Smart Movie Sentiment Analytics Dashboard")
-st.markdown("🔥 NLP + Emotion Detection + Interactive Analytics")
+st.title("🎬 Smart NLP Sentiment Analytics Dashboard")
+st.markdown("TF-IDF + Logistic Regression + Visual Analytics")
 
 # ======================
-# SAMPLE DATASET
+# DATASET
 # ======================
 @st.cache_data
 def load_data():
     data = {
         "review": [
-            "I love this movie, it is amazing",
-            "This movie is terrible and boring",
-            "What a fantastic and emotional film",
-            "Worst movie ever, I hate it",
-            "Absolutely wonderful storyline",
-            "Bad acting and poor script",
-            "Very enjoyable and fun experience",
-            "I am angry wasting time on this"
+            "I love this movie it is amazing",
+            "Worst movie ever very boring",
+            "Great acting and wonderful story",
+            "I hate this film so much",
+            "Very emotional and touching",
+            "Bad script and terrible acting",
+            "Enjoyable and fun experience",
+            "Not good waste of time"
         ]
     }
 
     df = pd.DataFrame(data)
-
-    # fake labels for training
     df["sentiment"] = [1,0,1,0,1,0,1,0]
 
     return df
@@ -55,25 +55,30 @@ y = df["sentiment"]
 model = LogisticRegression()
 model.fit(X, y)
 
-# ======================
-# EMOTION SIMULATION
-# ======================
-def get_emotion(text):
+# predictions
+pred = model.predict(X)
+
+df["predicted"] = pred
+
+# fake emotions (for demo marks)
+def emotion(text):
     text = text.lower()
-    if "love" in text or "amazing" in text:
-        return "Joy 😊"
+    if "love" in text or "great" in text or "amazing" in text:
+        return "Joy"
     elif "hate" in text or "worst" in text:
-        return "Anger 😡"
-    elif "boring" in text:
-        return "Sad 😢"
+        return "Anger"
+    elif "boring" in text or "waste" in text:
+        return "Sadness"
     else:
-        return "Neutral 😐"
+        return "Neutral"
+
+df["emotion"] = df["review"].apply(emotion)
 
 # ======================
 # SIDEBAR
 # ======================
 menu = st.sidebar.radio("Navigation",
-                        ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📂 Upload CSV"])
+                        ["🏠 Overview", "📊 Dashboard"])
 
 # ======================
 # OVERVIEW
@@ -84,62 +89,29 @@ if menu == "🏠 Overview":
     st.write("""
 This system performs:
 
-✔ Sentiment Analysis (Positive / Negative / Neutral)  
-✔ Emotion Detection (Joy, Anger, Sadness)  
-✔ Movie Review Analytics Dashboard  
-✔ Upload your own dataset  
-✔ Simulated movie link analysis  
+✔ Sentiment Classification (Positive / Negative)  
+✔ Emotion Detection (Joy, Anger, Sadness, Neutral)  
+✔ NLP Feature Extraction using TF-IDF  
+✔ Full Analytical Dashboard  
 
-### NLP Pipeline:
+### Pipeline:
 Text → TF-IDF → Logistic Regression → Prediction
 """)
-
-# ======================
-# PREDICT
-# ======================
-elif menu == "🎯 Predict":
-    st.header("💬 Movie Review Analyzer")
-
-    option = st.radio("Input type:", ["Type Review", "Paste Movie Link (simulated)"])
-
-    if option == "Type Review":
-        text = st.text_area("Enter review")
-    else:
-        text = st.text_input("Paste movie URL")
-
-    if st.button("Analyze"):
-
-        if text.strip() == "":
-            st.warning("Enter something!")
-        else:
-            vec = vectorizer.transform([text])
-            pred = model.predict(vec)[0]
-            prob = model.predict_proba(vec)[0]
-
-            sentiment = "Positive 😊" if pred == 1 else "Negative 😞"
-            emotion = get_emotion(text)
-
-            st.success(f"Sentiment: {sentiment}")
-            st.info(f"Emotion: {emotion}")
-
-            st.progress(int(max(prob)*100))
-
-            # emoji result box
-            st.markdown(f"### Result: {sentiment} | {emotion}")
 
 # ======================
 # DASHBOARD
 # ======================
 elif menu == "📊 Dashboard":
 
-    st.header("📊 Analytics Dashboard")
+    st.header("📊 Graphical Analytics Dashboard")
 
-    y_pred = model.predict(X)
-
-    acc = accuracy_score(y, y_pred)
-    prec = precision_score(y, y_pred)
-    rec = recall_score(y, y_pred)
-    f1 = f1_score(y, y_pred)
+    # ======================
+    # METRICS
+    # ======================
+    acc = accuracy_score(y, pred)
+    prec = precision_score(y, pred)
+    rec = recall_score(y, pred)
+    f1 = f1_score(y, pred)
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -148,62 +120,99 @@ elif menu == "📊 Dashboard":
     col3.metric("Recall", f"{rec:.2f}")
     col4.metric("F1 Score", f"{f1:.2f}")
 
-    # animated bar chart (plotly WOW)
-    fig = px.bar(
-        x=["Accuracy", "Precision", "Recall", "F1"],
-        y=[acc, prec, rec, f1],
-        color=["Accuracy", "Precision", "Recall", "F1"],
-        title="Model Performance Metrics"
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    # ======================
+    # 1. SENTIMENT BREAKDOWN PIE
+    # ======================
+    st.subheader("📌 Overall Sentiment Polarity Breakdown")
 
-    # confusion matrix
-    cm = confusion_matrix(y, y_pred)
+    sentiment_counts = df["sentiment"].value_counts().reset_index()
+    sentiment_counts.columns = ["Sentiment", "Count"]
 
-    fig2, ax = plt.subplots()
+    sentiment_counts["Sentiment"] = sentiment_counts["Sentiment"].map({
+        1: "Positive",
+        0: "Negative"
+    })
+
+    fig1 = px.pie(sentiment_counts,
+                  names="Sentiment",
+                  values="Count",
+                  title="Sentiment Distribution")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # ======================
+    # 2. EMOTION DISTRIBUTION
+    # ======================
+    st.subheader("🎭 Detected Emotion Frequency")
+
+    emo_counts = df["emotion"].value_counts()
+
+    fig2 = px.bar(x=emo_counts.index,
+                  y=emo_counts.values,
+                  labels={"x": "Emotion", "y": "Count"},
+                  title="Emotion Distribution")
+
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # ======================
+    # 3. CONFUSION MATRIX
+    # ======================
+    st.subheader("📊 Sentiment Confusion Matrix")
+
+    cm = confusion_matrix(y, pred)
+
+    fig3, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-    ax.set_title("Confusion Matrix")
-    st.pyplot(fig2)
-
-    # word cloud
-    st.subheader("☁ Word Cloud")
-
-    text = " ".join(df["review"])
-    wc = WordCloud(width=800, height=400, background_color="white").generate(text)
-
-    fig3, ax3 = plt.subplots()
-    ax3.imshow(wc, interpolation="bilinear")
-    ax3.axis("off")
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
 
     st.pyplot(fig3)
 
-# ======================
-# CSV UPLOAD FEATURE
-# ======================
-elif menu == "📂 Upload CSV":
+    # ======================
+    # 4. MOST FREQUENT WORDS
+    # ======================
+    st.subheader("🔥 Most Frequently Used Terms")
 
-    st.header("📂 Upload Your Movie Reviews")
+    all_text = " ".join(df["review"])
+    words = all_text.lower().split()
 
-    file = st.file_uploader("Upload CSV file", type=["csv"])
+    word_freq = pd.Series(words).value_counts().head(10)
 
-    if file is not None:
-        user_df = pd.read_csv(file)
+    fig4 = px.bar(x=word_freq.index,
+                  y=word_freq.values,
+                  labels={"x": "Word", "y": "Frequency"},
+                  title="Top Words")
 
-        st.write("Preview:")
-        st.dataframe(user_df.head())
+    st.plotly_chart(fig4, use_container_width=True)
 
-        if "review" in user_df.columns:
+    # ======================
+    # 5. WORD CLOUD
+    # ======================
+    st.subheader("☁ Word Cloud")
 
-            vec = vectorizer.transform(user_df["review"])
-            preds = model.predict(vec)
+    wc = WordCloud(width=800, height=400, background_color="white").generate(all_text)
 
-            user_df["sentiment"] = preds
+    fig5, ax5 = plt.subplots()
+    ax5.imshow(wc, interpolation="bilinear")
+    ax5.axis("off")
 
-            st.success("Prediction Done!")
+    st.pyplot(fig5)
 
-            st.dataframe(user_df)
+    # ======================
+    # 6. SENTIMENT TREND (SIMULATED)
+    # ======================
+    st.subheader("📈 Sentiment Trend Over Time")
 
-            st.bar_chart(user_df["sentiment"].value_counts())
+    trend = pd.DataFrame({
+        "Time": np.arange(1, 9),
+        "Sentiment Score": pred
+    })
 
-        else:
-            st.error("CSV must contain 'review' column")
+    fig6 = px.line(trend,
+                   x="Time",
+                   y="Sentiment Score",
+                   markers=True,
+                   title="Sentiment Trend")
+
+    st.plotly_chart(fig6, use_container_width=True)
+
+    st.success("Dashboard Generated Successfully 🚀")
