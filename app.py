@@ -98,6 +98,15 @@ model.fit(X_train_vec, y_train)
 # ======================
 # SIDEBAR
 # ======================
+# ======================
+# CUSTOM DEMO MESSAGE (ADD THIS)
+# ======================
+st.markdown("""
+<div style="padding:10px; background-color:#f0f2f6; border-radius:10px;">
+<b>Demo Mode:</b> This system predicts sentiment (Positive / Negative) and detects emotion (Joy / Anger / Neutral).
+</div>
+""", unsafe_allow_html=True)
+
 menu = st.sidebar.radio(
     "Navigation",
     ["Overview", "Predict", "Dashboard", "History"]
