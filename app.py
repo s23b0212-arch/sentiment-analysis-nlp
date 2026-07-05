@@ -128,42 +128,97 @@ elif menu == "🎯 Predict":
 # DASHBOARD
 # ======================
 elif menu == "📊 Dashboard":
-    st.header("📊 Analytics Dashboard")
+    st.header("📊 Graphical Analytics Dashboard")
 
-    if len(st.session_state.history) > 0:
+    if len(st.session_state.history) == 0:
+        st.info("No data yet. Go to Predict page first.")
 
+    else:
         df = pd.DataFrame(st.session_state.history)
 
-        col1, col2, col3 = st.columns(3)
-
-        col1.metric("Total Reviews", len(df))
-        col2.metric("Positive", (df["sentiment"] == "Positive").sum())
-        col3.metric("Negative", (df["sentiment"] == "Negative").sum())
-
-        st.subheader("Sentiment Breakdown")
+        # ======================
+        # 1. SENTIMENT BREAKDOWN
+        # ======================
+        st.subheader("📊 Overall Sentiment Polarity Breakdown")
 
         fig, ax = plt.subplots()
-        sns.countplot(x=df["sentiment"], ax=ax)
+        df["sentiment"].value_counts().plot(
+            kind="pie",
+            autopct="%1.1f%%",
+            ax=ax
+        )
+        ax.set_ylabel("")
         st.pyplot(fig)
 
-        st.subheader("Emotion Breakdown")
+        # ======================
+        # 2. EMOTION DISTRIBUTION
+        # ======================
+        st.subheader("😄 Emotion Frequency Distribution")
 
         fig2, ax2 = plt.subplots()
         sns.countplot(x=df["emotion"], ax=ax2)
         plt.xticks(rotation=45)
         st.pyplot(fig2)
 
-        st.subheader("Download Data")
+        # ======================
+        # 3. SENTIMENT VS EMOTION MATRIX
+        # ======================
+        st.subheader("📊 Sentiment & Emotion Correlation Matrix")
 
+        pivot = pd.crosstab(df["emotion"], df["sentiment"])
+
+        fig3, ax3 = plt.subplots()
+        sns.heatmap(pivot, annot=True, cmap="Blues", ax=ax3)
+        st.pyplot(fig3)
+
+        # ======================
+        # 4. MOST FREQUENT WORDS
+        # ======================
+        st.subheader("☁ Most Frequently Used Terms")
+
+        from collections import Counter
+        import re
+
+        all_words = " ".join(df["review"]).lower()
+        words = re.findall(r'\b[a-z]+\b', all_words)
+
+        stopwords = set(["the","is","and","a","this","it","to","was","i","very","movie"])
+        words = [w for w in words if w not in stopwords]
+
+        word_counts = Counter(words).most_common(10)
+
+        word_df = pd.DataFrame(word_counts, columns=["Word", "Count"])
+
+        fig4, ax4 = plt.subplots()
+        sns.barplot(x="Count", y="Word", data=word_df, ax=ax4)
+        st.pyplot(fig4)
+
+        # ======================
+        # 5. SENTIMENT TREND
+        # ======================
+        st.subheader("📈 Sentiment Trend Over Time")
+
+        df["index"] = range(len(df))
+
+        fig5, ax5 = plt.subplots()
+        sns.lineplot(x="index", y=df["sentiment"].map({
+            "Positive": 1,
+            "Negative": -1,
+            "Neutral": 0
+        }), data=df, ax=ax5)
+
+        ax5.set_ylabel("Sentiment Score")
+        st.pyplot(fig5)
+
+        # ======================
+        # DOWNLOAD
+        # ======================
         st.download_button(
-            "Download CSV",
+            "📥 Download Full Analytics Data",
             df.to_csv(index=False).encode("utf-8"),
-            "sentiment_results.csv",
+            "analytics.csv",
             "text/csv"
         )
-
-    else:
-        st.info("No data yet. Go to Predict page first.")
 
 # ======================
 # HISTORY
