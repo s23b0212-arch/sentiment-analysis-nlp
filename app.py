@@ -142,54 +142,59 @@ elif menu == "🎯 Predict":
             "sentiment": sentiment
         })
 
+
 # ======================
-# DASHBOARD (A+ STYLE)
+# DASHBOARD (MODERN SMALL GRAPHS)
 # ======================
 elif menu == "📊 Dashboard":
+    st.header("📊 Graphical Analytics Dashboard")
 
-    st.subheader("📊 Analytics Dashboard")
+    df_hist = pd.DataFrame(st.session_state.history) if len(st.session_state.history) > 0 else df
 
-    y_pred = model.predict(X_test_vec)
+    col1, col2 = st.columns(2)
 
-    acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred)
-    rec = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
+    # SENTIMENT PIE (SMALL)
+    with col1:
+        sentiment_counts = df_hist["sentiment"].value_counts()
+        fig = px.pie(
+            values=sentiment_counts.values,
+            names=sentiment_counts.index,
+            hole=0.5,
+            title="Sentiment Breakdown"
+        )
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # ======================
-    # KPI CARDS
-    # ======================
-    col1, col2, col3, col4 = st.columns(4)
+    # EMOTION BAR (SMALL)
+    with col2:
+        emotion_counts = df_hist["emotion"].value_counts()
+        fig2 = px.bar(
+            x=emotion_counts.index,
+            y=emotion_counts.values,
+            title="Emotion Frequency",
+            color=emotion_counts.values
+        )
+        fig2.update_layout(height=350)
+        st.plotly_chart(fig2, use_container_width=True)
 
-    col1.metric("Accuracy", f"{acc:.2f}")
-    col2.metric("Precision", f"{prec:.2f}")
-    col3.metric("Recall", f"{rec:.2f}")
-    col4.metric("F1 Score", f"{f1:.2f}")
+    # HEATMAP
+    st.subheader("Sentiment & Emotion Correlation")
+    matrix = pd.crosstab(df_hist["emotion"], df_hist["sentiment"])
+    fig3 = px.imshow(matrix, text_auto=True, height=350)
+    st.plotly_chart(fig3, use_container_width=True)
 
-    # ======================
-    # INSIGHT BOX (A+ PART)
-    # ======================
-    st.markdown("### 🧠 AI Insight")
+    # TREND
+    st.subheader("Sentiment Trend Over Time")
+    df_hist["index"] = range(len(df_hist))
 
-    if acc > 0.85:
-        st.success("Model performance is strong and reliable for sentiment classification.")
-    else:
-        st.warning("Model may need improvement for better generalization.")
-
-    # ======================
-    # SENTIMENT PIE (SMALL & CLEAN)
-    # ======================
-    st.markdown("### 📊 Sentiment Distribution")
-
-    fig = px.pie(
-        df,
-        names="sentiment",
-        hole=0.6,
-        color_discrete_sequence=["#e74c3c", "#2ecc71"]
+    fig4 = px.line(
+        df_hist,
+        x="index",
+        y=df_hist["sentiment"].map({"Positive 😊": 1, "Negative 😡": -1}),
+        markers=True
     )
-    fig.update_layout(height=350)
-
-    st.plotly_chart(fig, use_container_width=True)
+    fig4.update_layout(height=300)
+    st.plotly_chart(fig4, use_container_width=True)
 
 # ======================
 # CSV UPLOAD
