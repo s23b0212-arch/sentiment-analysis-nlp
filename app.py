@@ -1,5 +1,26 @@
 import streamlit as st
 import pandas as pd
+
+
+data = {
+    "review": [
+        "This movie is amazing and I love it",
+        "Worst movie ever, very boring",
+        "It was okay not too bad",
+        "I really enjoyed the story",
+        "Terrible acting and bad plot",
+        "Fantastic film with great actors",
+        "Not good, not bad, just average",
+        "I hate this movie so much",
+        "Beautiful cinematography and great music",
+        "Waste of time"
+    ],
+    "sentiment": [
+        1,0,1,1,0,1,1,0,1,0
+    ]
+}
+
+df = pd.DataFrame(data)
 import numpy as np
 
 from sklearn.model_selection import train_test_split
