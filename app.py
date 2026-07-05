@@ -35,29 +35,36 @@ st.markdown("""
 # ======================
 data = {
     "review": [
-        "I love this movie it is amazing",
-        "This film is fantastic and great",
-        "Very enjoyable and good story",
-        "Absolutely wonderful experience",
-        "Amazing acting and visuals",
-        "I really love this film",
-        "It was excellent and enjoyable",
-        "Brilliant movie highly recommended",
-        "One of the best movies I have seen",
+        # ================= POSITIVE =================
+        "This movie is amazing",
+        "I absolutely loved this film",
+        "Fantastic story and great acting",
+        "One of the best movies ever",
+        "I really enjoyed this movie",
+        "Beautiful cinematography and music",
+        "Great film I will watch again",
+        "Excellent and very enjoyable",
+        "Amazing performance by actors",
+        "I love this movie so much",
 
-        "Worst movie ever I hate it",
+        # ================= NEGATIVE =================
+        "Worst movie ever",
+        "I hate this film",
+        "Very boring and waste of time",
         "Terrible acting and bad plot",
-        "Very boring waste of time",
-        "I did not like this movie",
-        "This movie is bad and boring",
-        "I hate this movie so much",
-        "Not good very disappointing",
-        "Awful and worst experience",
-        "Completely horrible film"
+        "I did not enjoy this movie",
+        "Awful experience watching this",
+        "Bad movie not worth watching",
+        "Disappointing and boring film",
+        "I will never watch this again",
+        "Not good at all"
     ],
     "sentiment": [
-        1,1,1,1,1,1,1,1,1,
-        0,0,0,0,0,0,0,0,0
+        # 1 = Positive
+        1,1,1,1,1,1,1,1,1,1,
+
+        # 0 = Negative
+        0,0,0,0,0,0,0,0,0,0
     ]
 }
 
