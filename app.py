@@ -70,7 +70,7 @@ model.fit(X_train_vec, y_train)
 # ======================
 menu = st.sidebar.radio(
     "Navigation",
-    ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📁 Upload CSV", "📜 History"]
+    ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📜 History"]
 )
 
 # ======================
