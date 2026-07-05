@@ -33,29 +33,41 @@ st.markdown("""
 # ======================
 # DATASET
 # ======================
+# ======================
+# DATASET (FIXED & BALANCED)
+# ======================
 data = {
     "review": [
+        # POSITIVE REVIEWS
         "I love this movie it is amazing",
         "This film is fantastic and great",
         "Very enjoyable and good story",
         "Absolutely wonderful experience",
+        "Amazing acting and visuals",
+        "I really love this film",
+        "It was excellent and enjoyable",
+        "Brilliant movie highly recommended",
+        "One of the best movies I have seen",
+
+        # NEGATIVE REVIEWS
         "Worst movie ever I hate it",
         "Terrible acting and bad plot",
         "Very boring waste of time",
         "I did not like this movie",
-        "Amazing acting and great visuals",
-        "Not good very disappointing",
-        "I really love this film",
         "This movie is bad and boring",
-        "Fantastic story I enjoyed it",
         "I hate this movie so much",
-        "It was an excellent movie"
+        "Not good very disappointing",
+        "Awful and worst experience",
+        "Completely horrible film"
     ],
     "sentiment": [
-        1,1,1,1,0,0,0,0,1,0,1,0,1,0,1
+        # 9 positive
+        1,1,1,1,1,1,1,1,1,
+
+        # 9 negative
+        0,0,0,0,0,0,0,0,0
     ]
 }
-
 df = pd.DataFrame(data)
 
 # ======================
