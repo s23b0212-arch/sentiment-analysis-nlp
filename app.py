@@ -37,16 +37,16 @@ data = {
     "review": [
         "This movie is amazing and I love it",
         "Worst movie ever, very boring",
-        "It was okay not too bad",
-        "I really enjoyed the story",
-        "Terrible acting and bad plot",
-        "Fantastic film with great actors",
-        "Not good, not bad, just average",
-        "I hate this movie so much",
-        "Beautiful cinematography and great music",
-        "Waste of time"
+        "Absolutely terrible acting",
+        "I hate this film",
+        "Fantastic and very enjoyable movie",
+        "Worst experience ever",
+        "I really love this movie",
+        "Boring and waste of time",
+        "Great story and amazing acting",
+        "Not good at all"
     ],
-    "sentiment": [1,0,1,1,0,1,1,0,1,0]
+    "sentiment": [1,0,0,0,1,0,1,0,1,0]
 }
 
 df = pd.DataFrame(data)
