@@ -1,25 +1,37 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import re
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 import plotly.express as px
 
 # ======================
-# PAGE CONFIG
+# PAGE CONFIG (A+ STYLE)
 # ======================
-st.set_page_config(page_title="Smart Sentiment Dashboard", layout="wide")
-
-st.title("🎬 Smart Movie Sentiment Analytics Dashboard")
-st.markdown("NLP System using TF-IDF + Logistic Regression + Emotion Analytics")
+st.set_page_config(
+    page_title="NLP Sentiment Intelligence",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # ======================
-# SAMPLE DATA (NO FILE ERROR)
+# HEADER (SAAS STYLE)
+# ======================
+st.markdown("""
+    <h1 style='text-align: center; color: #4F8BF9;'>
+    🎬 NLP Sentiment Intelligence Dashboard
+    </h1>
+    <p style='text-align: center; color: gray;'>
+    AI-powered Movie Review Analytics (TF-IDF + Logistic Regression + Emotion Detection)
+    </p>
+""", unsafe_allow_html=True)
+
+# ======================
+# DATASET (SAFE SMALL DATA)
 # ======================
 data = {
     "review": [
@@ -40,25 +52,7 @@ data = {
 df = pd.DataFrame(data)
 
 # ======================
-# EMOTION FUNCTION
-# ======================
-def get_emotion(text):
-    text = text.lower()
-    if any(w in text for w in ["happy", "good", "great", "love", "amazing"]):
-        return "Joy 😊"
-    elif any(w in text for w in ["bad", "worst", "boring", "hate", "waste"]):
-        return "Anger 😡"
-    elif any(w in text for w in ["sad", "cry", "disappointed"]):
-        return "Sadness 😢"
-    elif any(w in text for w in ["wow", "surprise", "unexpected"]):
-        return "Surprise 😲"
-    else:
-        return "Neutral 😐"
-
-df["emotion"] = df["review"].apply(get_emotion)
-
-# ======================
-# TRAIN MODEL
+# MODEL TRAINING
 # ======================
 X_train, X_test, y_train, y_test = train_test_split(
     df["review"], df["sentiment"], test_size=0.2, random_state=42
@@ -72,13 +66,7 @@ model = LogisticRegression()
 model.fit(X_train_vec, y_train)
 
 # ======================
-# HISTORY
-# ======================
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# ======================
-# SIDEBAR MENU
+# SIDEBAR NAVIGATION
 # ======================
 menu = st.sidebar.radio(
     "Navigation",
@@ -86,25 +74,36 @@ menu = st.sidebar.radio(
 )
 
 # ======================
+# SESSION HISTORY
+# ======================
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+# ======================
 # OVERVIEW
 # ======================
 if menu == "🏠 Overview":
-    st.header("📌 Project Overview")
-    st.write("""
-This system analyzes movie reviews using NLP.
 
-✔ Sentiment Analysis  
-✔ Emotion Detection  
-✔ Interactive Dashboard  
-✔ CSV Bulk Analysis  
-✔ History Tracking  
-""")
+    st.subheader("📌 Project Overview")
+
+    st.info("""
+    This system is a **Smart NLP Sentiment Analytics Dashboard** that:
+
+    ✔ Classifies movie reviews (Positive / Negative)  
+    ✔ Uses TF-IDF + Logistic Regression  
+    ✔ Tracks prediction history  
+    ✔ Visualizes sentiment analytics  
+    ✔ Supports CSV bulk analysis  
+    """)
+
+    st.success("🎯 Target: Real-time AI-powered text understanding system")
 
 # ======================
-# PREDICT
+# PREDICT PAGE
 # ======================
 elif menu == "🎯 Predict":
-    st.header("💬 Sentiment Prediction")
+
+    st.subheader("💬 Try Sentiment Prediction")
 
     sample_reviews = [
         "This movie is amazing!",
@@ -114,107 +113,106 @@ elif menu == "🎯 Predict":
         "Very boring film"
     ]
 
-    user_input = st.selectbox("Try sample review:", sample_reviews)
+    user_input = st.selectbox("Select sample review", sample_reviews)
 
-    if st.button("Analyze"):
+    if st.button("Analyze Sentiment"):
+
         vec = vectorizer.transform([user_input])
         pred = model.predict(vec)[0]
         prob = model.predict_proba(vec)[0]
 
         sentiment = "Positive 😊" if pred == 1 else "Negative 😡"
-        emotion = get_emotion(user_input)
 
-        # EMOJI UI
-        if pred == 1:
-            st.success(f"😊 {sentiment}")
-        else:
-            st.error(f"😡 {sentiment}")
+        # KPI style output
+        col1, col2 = st.columns(2)
 
-        st.info(f"Emotion: {emotion}")
+        with col1:
+            if pred == 1:
+                st.success(sentiment)
+            else:
+                st.error(sentiment)
 
-        # CONFIDENCE BAR
-        st.progress(int(max(prob) * 100))
+        with col2:
+            st.metric("Confidence Score", f"{max(prob)*100:.2f}%")
+
+        st.progress(int(max(prob)*100))
 
         st.session_state.history.append({
             "review": user_input,
-            "sentiment": sentiment,
-            "emotion": emotion
+            "sentiment": sentiment
         })
 
 # ======================
-# DASHBOARD (MODERN SMALL GRAPHS)
+# DASHBOARD (A+ STYLE)
 # ======================
 elif menu == "📊 Dashboard":
-    st.header("📊 Graphical Analytics Dashboard")
 
-    df_hist = pd.DataFrame(st.session_state.history) if len(st.session_state.history) > 0 else df
+    st.subheader("📊 Analytics Dashboard")
 
-    col1, col2 = st.columns(2)
+    y_pred = model.predict(X_test_vec)
 
-    # SENTIMENT PIE (SMALL)
-    with col1:
-        sentiment_counts = df_hist["sentiment"].value_counts()
-        fig = px.pie(
-            values=sentiment_counts.values,
-            names=sentiment_counts.index,
-            hole=0.5,
-            title="Sentiment Breakdown"
-        )
-        fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    rec = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
 
-    # EMOTION BAR (SMALL)
-    with col2:
-        emotion_counts = df_hist["emotion"].value_counts()
-        fig2 = px.bar(
-            x=emotion_counts.index,
-            y=emotion_counts.values,
-            title="Emotion Frequency",
-            color=emotion_counts.values
-        )
-        fig2.update_layout(height=350)
-        st.plotly_chart(fig2, use_container_width=True)
+    # ======================
+    # KPI CARDS
+    # ======================
+    col1, col2, col3, col4 = st.columns(4)
 
-    # HEATMAP
-    st.subheader("Sentiment & Emotion Correlation")
-    matrix = pd.crosstab(df_hist["emotion"], df_hist["sentiment"])
-    fig3 = px.imshow(matrix, text_auto=True, height=350)
-    st.plotly_chart(fig3, use_container_width=True)
+    col1.metric("Accuracy", f"{acc:.2f}")
+    col2.metric("Precision", f"{prec:.2f}")
+    col3.metric("Recall", f"{rec:.2f}")
+    col4.metric("F1 Score", f"{f1:.2f}")
 
-    # TREND
-    st.subheader("Sentiment Trend Over Time")
-    df_hist["index"] = range(len(df_hist))
+    # ======================
+    # INSIGHT BOX (A+ PART)
+    # ======================
+    st.markdown("### 🧠 AI Insight")
 
-    fig4 = px.line(
-        df_hist,
-        x="index",
-        y=df_hist["sentiment"].map({"Positive 😊": 1, "Negative 😡": -1}),
-        markers=True
+    if acc > 0.85:
+        st.success("Model performance is strong and reliable for sentiment classification.")
+    else:
+        st.warning("Model may need improvement for better generalization.")
+
+    # ======================
+    # SENTIMENT PIE (SMALL & CLEAN)
+    # ======================
+    st.markdown("### 📊 Sentiment Distribution")
+
+    fig = px.pie(
+        df,
+        names="sentiment",
+        hole=0.6,
+        color_discrete_sequence=["#e74c3c", "#2ecc71"]
     )
-    fig4.update_layout(height=300)
-    st.plotly_chart(fig4, use_container_width=True)
+    fig.update_layout(height=350)
+
+    st.plotly_chart(fig, use_container_width=True)
 
 # ======================
 # CSV UPLOAD
 # ======================
 elif menu == "📁 Upload CSV":
-    st.header("📁 Bulk Analysis")
 
-    file = st.file_uploader("Upload CSV (must have 'review')", type=["csv"])
+    st.subheader("📁 Bulk Sentiment Analysis")
+
+    file = st.file_uploader("Upload CSV (must contain 'review')", type=["csv"])
 
     if file:
+
         data = pd.read_csv(file)
 
         vec = vectorizer.transform(data["review"])
         preds = model.predict(vec)
 
         data["sentiment"] = ["Positive 😊" if p == 1 else "Negative 😡" for p in preds]
-        data["emotion"] = data["review"].apply(get_emotion)
 
         st.dataframe(data)
 
         st.download_button(
-            "Download Results",
+            "⬇ Download Results",
             data.to_csv(index=False).encode("utf-8"),
             "results.csv",
             "text/csv"
@@ -224,16 +222,17 @@ elif menu == "📁 Upload CSV":
 # HISTORY
 # ======================
 elif menu == "📜 History":
-    st.header("Prediction History")
+
+    st.subheader("📜 Prediction History")
 
     if len(st.session_state.history) == 0:
-        st.info("No history yet")
+        st.info("No predictions yet.")
     else:
         hist = pd.DataFrame(st.session_state.history)
         st.dataframe(hist)
 
         st.download_button(
-            "Download History",
+            "⬇ Download History",
             hist.to_csv(index=False).encode("utf-8"),
             "history.csv",
             "text/csv"
