@@ -1,26 +1,5 @@
 import streamlit as st
 import pandas as pd
-
-
-data = {
-    "review": [
-        "This movie is amazing and I love it",
-        "Worst movie ever, very boring",
-        "It was okay not too bad",
-        "I really enjoyed the story",
-        "Terrible acting and bad plot",
-        "Fantastic film with great actors",
-        "Not good, not bad, just average",
-        "I hate this movie so much",
-        "Beautiful cinematography and great music",
-        "Waste of time"
-    ],
-    "sentiment": [
-        1,0,1,1,0,1,1,0,1,0
-    ]
-}
-
-df = pd.DataFrame(data)
 import numpy as np
 
 from sklearn.model_selection import train_test_split
@@ -41,17 +20,31 @@ st.title("🎬 Smart Movie Sentiment Analytics Dashboard")
 st.markdown("NLP System using TF-IDF + Logistic Regression + Emotion Detection")
 
 # ======================
-# LOAD DATA
+# MINI DATASET (NO CSV NEEDED)
 # ======================
-df = pd.read_csv("IMDB Dataset.csv")
-df.columns = df.columns.str.strip().str.lower()
-df['sentiment'] = df['sentiment'].map({'positive':1, 'negative':0})
+data = {
+    "review": [
+        "This movie is amazing and I love it",
+        "Worst movie ever, very boring",
+        "It was okay not too bad",
+        "I really enjoyed the story",
+        "Terrible acting and bad plot",
+        "Fantastic film with great actors",
+        "Not good, not bad, just average",
+        "I hate this movie so much",
+        "Beautiful cinematography and great music",
+        "Waste of time"
+    ],
+    "sentiment": [1,0,1,1,0,1,1,0,1,0]
+}
+
+df = pd.DataFrame(data)
 
 # ======================
-# MODEL
+# MODEL TRAINING
 # ======================
 X_train, X_test, y_train, y_test = train_test_split(
-    df['review'], df['sentiment'], test_size=0.2, random_state=42
+    df['review'], df['sentiment'], test_size=0.3, random_state=42
 )
 
 vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
@@ -67,9 +60,9 @@ model.fit(X_train_vec, y_train)
 # ======================
 def get_emotion(text):
     text = text.lower()
-    if any(w in text for w in ["happy", "good", "great", "love", "amazing"]):
+    if any(w in text for w in ["happy", "good", "great", "love", "amazing", "enjoyed"]):
         return "Joy 😊"
-    elif any(w in text for w in ["bad", "worst", "boring", "hate"]):
+    elif any(w in text for w in ["bad", "worst", "boring", "hate", "terrible"]):
         return "Anger 😡"
     elif any(w in text for w in ["sad", "cry", "disappointed"]):
         return "Sadness 😢"
@@ -79,30 +72,34 @@ def get_emotion(text):
         return "Neutral 😐"
 
 # ======================
-# HISTORY
+# SESSION HISTORY
 # ======================
 if "history" not in st.session_state:
     st.session_state.history = []
 
 # ======================
-# MENU
+# SIDEBAR MENU
 # ======================
-menu = st.sidebar.radio("Navigation", ["🏠 Overview", "🎯 Predict", "📁 Upload CSV", "📊 Dashboard", "📜 History"])
+menu = st.sidebar.radio("Navigation", ["🏠 Overview", "🎯 Predict", "📊 Dashboard", "📜 History"])
 
 # ======================
 # OVERVIEW
 # ======================
 if menu == "🏠 Overview":
-    st.header("📌 Overview")
+    st.header("📌 Project Overview")
+
     st.write("""
-This system analyzes movie reviews using NLP.
+This is a **Movie Sentiment Analysis System using NLP**.
 
 ### Features:
-- Sentiment prediction (Positive / Negative)
-- Emotion detection
-- CSV bulk analysis
-- Performance dashboard
-- History tracking
+- Sentiment Prediction (Positive / Negative)
+- Emotion Detection (Joy, Anger, Sadness, etc.)
+- Machine Learning Model (TF-IDF + Logistic Regression)
+- Performance Dashboard
+- Prediction History
+
+### NLP Pipeline:
+Text → Cleaning → TF-IDF → ML Model → Prediction
 """)
 
 # ======================
@@ -111,7 +108,7 @@ This system analyzes movie reviews using NLP.
 elif menu == "🎯 Predict":
     st.header("💬 Enter Movie Review")
 
-    user_input = st.text_area("Write your review here:")
+    user_input = st.text_area("Write your review:")
 
     if st.button("Analyze"):
         if user_input.strip():
@@ -125,7 +122,7 @@ elif menu == "🎯 Predict":
 
             st.success(f"Sentiment: {sentiment}")
             st.info(f"Emotion: {emotion}")
-            st.progress(int(max(prob)*100))
+            st.progress(int(max(prob) * 100))
 
             st.session_state.history.append({
                 "review": user_input,
@@ -134,42 +131,13 @@ elif menu == "🎯 Predict":
             })
 
         else:
-            st.warning("Please enter review")
-
-# ======================
-# CSV UPLOAD
-# ======================
-elif menu == "📁 Upload CSV":
-    st.header("📁 Bulk Analysis")
-
-    file = st.file_uploader("Upload CSV (must contain 'review')", type=["csv"])
-
-    if file:
-        data = pd.read_csv(file)
-
-        if "review" not in data.columns:
-            st.error("CSV must have 'review' column")
-        else:
-            vec = vectorizer.transform(data["review"])
-            preds = model.predict(vec)
-
-            data["sentiment"] = ["Positive 😊" if p==1 else "Negative 😡" for p in preds]
-            data["emotion"] = data["review"].apply(get_emotion)
-
-            st.dataframe(data)
-
-            st.download_button(
-                "Download Results",
-                data.to_csv(index=False).encode("utf-8"),
-                "results.csv",
-                "text/csv"
-            )
+            st.warning("Please enter a review")
 
 # ======================
 # DASHBOARD
 # ======================
 elif menu == "📊 Dashboard":
-    st.header("📊 Model Performance")
+    st.header("📊 Model Performance Metrics")
 
     y_pred = model.predict(X_test_vec)
 
@@ -181,13 +149,17 @@ elif menu == "📊 Dashboard":
     col4.metric("F1 Score", f"{f1_score(y_test, y_pred):.2f}")
 
     st.subheader("Confusion Matrix")
+
     cm = confusion_matrix(y_test, y_pred)
 
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
     st.pyplot(fig)
 
     st.subheader("Sentiment Distribution")
+
     fig2, ax2 = plt.subplots()
     sns.countplot(x=df["sentiment"], ax=ax2)
     ax2.set_xticklabels(["Negative", "Positive"])
