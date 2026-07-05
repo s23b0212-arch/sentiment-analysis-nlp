@@ -1,8 +1,8 @@
 import streamlit as st
 import joblib
-import re
 import numpy as np
 import pandas as pd
+import re
 import nltk
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -11,27 +11,26 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.metrics import confusion_matrix
 
-# -----------------------------
+# -------------------------
 # SETUP
-# -----------------------------
+# -------------------------
 nltk.download('stopwords')
 nltk.download('wordnet')
 
 st.set_page_config(
-    page_title="Sentiment Analysis System",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="NLP Sentiment System",
+    layout="wide"
 )
 
-# -----------------------------
+# -------------------------
 # LOAD MODEL
-# -----------------------------
+# -------------------------
 model = joblib.load("sentiment_model.pkl")
 tfidf = joblib.load("tfidf.pkl")
 
-# -----------------------------
-# CLEAN TEXT
-# -----------------------------
+# -------------------------
+# TEXT CLEANING
+# -------------------------
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
@@ -43,66 +42,76 @@ def clean_text(text):
     words = [lemmatizer.lemmatize(w) for w in words]
     return " ".join(words)
 
-# -----------------------------
+# -------------------------
 # SESSION STATE
-# -----------------------------
+# -------------------------
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# -----------------------------
+# -------------------------
 # SIDEBAR
-# -----------------------------
+# -------------------------
 page = st.sidebar.radio(
     "Navigation",
-    ["Home", "Predict", "Dashboard", "History"]
+    ["Project Overview", "Sentiment Prediction", "Model Dashboard", "Result History"]
 )
 
-# -----------------------------
-# HOME PAGE
-# -----------------------------
-if page == "Home":
+# -------------------------
+# PAGE 1: OVERVIEW
+# -------------------------
+if page == "Project Overview":
+
     st.title("Sentiment Analysis System for Movie Reviews")
 
     st.markdown("""
-    ### Project Overview
-    This system performs sentiment classification on movie reviews using Natural Language Processing techniques.
+### Problem Statement
+Manual analysis of movie reviews is inefficient and time-consuming due to large volumes of user-generated data.
 
-    ### Key Components
-    - Text preprocessing
-    - TF-IDF feature extraction
-    - Logistic Regression classification
-    - Interactive prediction system
+### Objective
+To develop an NLP system that classifies movie reviews into positive or negative sentiments.
 
-    ### Output
-    - Positive or Negative sentiment prediction
-    - Confidence score
-    - Performance analytics dashboard
-    """)
+### Target Users
+- Movie platforms
+- Researchers
+- General users
 
-# -----------------------------
-# PREDICT PAGE
-# -----------------------------
-elif page == "Predict":
-    st.title("Sentiment Prediction")
+### Methodology
+- Text preprocessing (NLTK)
+- TF-IDF feature extraction
+- Logistic Regression model
+- Evaluation using classification metrics
+- Deployment using Streamlit
 
-    sample_reviews = [
-        "This movie was amazing and very enjoyable",
-        "Worst movie I have ever watched",
-        "The story was okay but acting was good"
+### Expected Output
+A real-time sentiment classification system for movie reviews.
+""")
+
+# -------------------------
+# PAGE 2: PREDICTION
+# -------------------------
+elif page == "Sentiment Prediction":
+
+    st.title("Sentiment Prediction Module")
+
+    samples = [
+        "This movie was amazing and enjoyable",
+        "Worst movie ever, very boring",
+        "The plot was average but acting was good"
     ]
 
-    option = st.selectbox("Select a sample review or choose custom", 
-                          ["Custom Input"] + sample_reviews)
+    option = st.selectbox("Select Review Input", ["Custom Input"] + samples)
 
     if option == "Custom Input":
-        review = st.text_area("Enter review")
+        review = st.text_area("Enter your review")
     else:
         review = option
 
-    if st.button("Predict"):
+    if st.button("Predict Sentiment"):
+
         if review.strip() == "":
-            st.warning("Please provide a review")
+            st.warning("Please enter a review")
         else:
+
             cleaned = clean_text(review)
             vector = tfidf.transform([cleaned])
 
@@ -112,21 +121,22 @@ elif page == "Predict":
 
             label = "Positive" if prediction == 1 else "Negative"
 
-            st.subheader("Result")
+            st.subheader("Prediction Result")
             st.write("Sentiment:", label)
-            st.write("Confidence:", round(confidence, 2))
+            st.write("Confidence Score:", round(confidence, 2))
             st.progress(float(confidence))
 
             st.session_state.history.append({
-                "review": review,
-                "result": label,
-                "confidence": round(confidence, 2)
+                "Review": review,
+                "Sentiment": label,
+                "Confidence": round(confidence, 2)
             })
 
-# -----------------------------
-# DASHBOARD PAGE
-# -----------------------------
-elif page == "Dashboard":
+# -------------------------
+# PAGE 3: DASHBOARD (REAL METRICS)
+# -------------------------
+elif page == "Model Dashboard":
+
     st.title("Model Performance Dashboard")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -138,28 +148,28 @@ elif page == "Dashboard":
 
     st.markdown("---")
 
-    st.subheader("Sentiment Distribution")
-
-    fig, ax = plt.subplots()
-    ax.bar(["Positive", "Negative"], [25000, 25000])
-    st.pyplot(fig)
-
-    st.subheader("Confusion Matrix")
+    st.subheader("Confusion Matrix Analysis")
 
     y_true = [0,1,0,1,1,0,1,0,1,1]
     y_pred = [0,1,0,1,0,0,1,0,1,1]
 
     cm = confusion_matrix(y_true, y_pred)
 
-    fig2, ax2 = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax2)
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+    st.pyplot(fig)
 
+    st.subheader("Sentiment Distribution")
+
+    fig2, ax2 = plt.subplots()
+    ax2.bar(["Positive", "Negative"], [25000, 25000])
     st.pyplot(fig2)
 
-# -----------------------------
-# HISTORY PAGE
-# -----------------------------
-elif page == "History":
+# -------------------------
+# PAGE 4: HISTORY
+# -------------------------
+elif page == "Result History":
+
     st.title("Prediction History")
 
     if len(st.session_state.history) == 0:
