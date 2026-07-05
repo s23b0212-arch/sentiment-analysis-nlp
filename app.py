@@ -67,6 +67,14 @@ data = {
         0,0,0,0,0,0,0,0,0,0
     ]
 }
+st.markdown("### AI Analysis Result")
+
+if pred == 1:
+    st.success("Sentiment: Positive 😊")
+    st.write("Insight: User expresses satisfaction and enjoyment.")
+else:
+    st.error("Sentiment: Negative 😡")
+    st.write("Insight: User expresses dissatisfaction or dislike.")
 
 df = pd.DataFrame(data)
 
