@@ -84,7 +84,7 @@ if "history" not in st.session_state:
 # ======================
 if menu == "🏠 Overview":
 
-    st.subheader("📌 Project Overview")
+    st.subheader("Project Overview")
 
     st.info("""
     This system is a **Smart NLP Sentiment Analytics Dashboard** that:
@@ -96,7 +96,7 @@ if menu == "🏠 Overview":
     ✔ Supports CSV bulk analysis  
     """)
 
-    st.success("🎯 Target: Real-time AI-powered text understanding system")
+    st.success("Target: Real-time AI-powered text understanding system")
 
 # ======================
 # PREDICT PAGE
