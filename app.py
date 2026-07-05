@@ -57,11 +57,15 @@ df = pd.DataFrame(data)
 def get_emotion(text):
     text = text.lower()
 
-    if any(word in text for word in ["amazing", "love", "great", "fantastic", "good"]):
+    joy_words = ["amazing", "love", "great", "fantastic", "good", "enjoy"]
+    anger_words = ["hate", "worst", "boring", "terrible", "bad", "waste"]
+    sad_words = ["sad", "disappointed", "cry"]
+
+    if any(w in text for w in joy_words):
         return "Joy 😊"
-    elif any(word in text for word in ["hate", "worst", "boring", "terrible"]):
+    elif any(w in text for w in anger_words):
         return "Anger 😡"
-    elif any(word in text for word in ["sad", "bad", "waste"]):
+    elif any(w in text for w in sad_words):
         return "Sadness 😢"
     else:
         return "Neutral 😐"
