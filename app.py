@@ -34,14 +34,7 @@ st.markdown("""
 # DATASET (FIXED & BALANCED)
 # ======================
 # ======================
-# CUSTOM DEMO MESSAGE
-# ======================
-st.markdown("""
-<div style="padding:12px; background-color:#e6f0ff; border-radius:10px; border-left:5px solid #4F8BF9;">
-<b>Demo Info:</b><br>
-This NLP system classifies movie reviews into Positive or Negative sentiment and detects basic emotions like Joy, Anger, and Neutral.
-</div>
-""", unsafe_allow_html=True)
+
 
 data = {
     "review": [
